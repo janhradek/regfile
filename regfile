@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 
+# v0.1.1:
+# - some texts were fixed
+# - the progress status has been changed
+
 # TODO:
 # - display filename (and group and comment?) differences in check operation
 # - unit test register.py - (some input data is needed)
 # - verbosity (incremental, 1 - show cfg, 2 - show db ops)
-# - some stuff is hardcoded (autovalues) and it would be nice to have it in the config
+# - guess group and comment for queries (defaults and autovalues)
+# - inteligent default and comment, guess everything without (much) instructions
 
 VERSION = 0.1
 

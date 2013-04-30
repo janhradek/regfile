@@ -13,6 +13,7 @@ import mysum
 import autovalues
 
 from config import CFG, CFGLOC
+from progressbar import progressbar
 
 class Register(object):
 
@@ -66,9 +67,9 @@ class Register(object):
         if CFG["regfile"].getboolean("default"):
             import textwrap as tw
             print(tw.fill(tw.dedent("""
-                        The configuration file '{0}' didn't exist, so a default has been created! 
-                        That also means that a default location for the database '{1}' is being 
-                        used. Review and change the configuration if necessary! The requested 
+                        The configuration file '{0}' didn't exist, so a default has been created!
+                        That also means that a default location for the database '{1}' is being
+                        used. Review and change the configuration if necessary! The requested
                         operation has been canceled. (This warning is displayed only once!)
                         """.format(CFGLOC, self.dbfile))
                 , initial_indent="!!!   ", subsequent_indent="!!!   "))
@@ -105,7 +106,7 @@ class Register(object):
 
     def go(self, once=True):
         """
-        just run the designe doperation
+        just run the designed doperation
         """
         try:
             if self.dryrun:
@@ -139,7 +140,7 @@ class Register(object):
 
     def docommit(self, problems):
         if self.confirm or (self.confirmproblem and problems):
-            return (input("Do you wish to commit? [YES/no] ").lower().strip() in ["", "yes", "y"])
+            return (input("Do you wish to commit these changes? [YES/no] ").lower().strip() in ["", "yes", "y"])
         return True
 
     def register(self):
@@ -219,7 +220,7 @@ class Register(object):
                         #self.mm.insert(dbf)
                         self.mm.insert(dbf, commit=False)
                         self.log(Register.LOGADD + dbf.logstr())
-                        self.printstatus(ii, sff, "Registered as " + str(dbf.idno))
+                        self.printstatus(ii, sff, "New entry " + str(dbf.idno))
                     else:
                         if dbf.match(dbfs[0], nametoo=True):
                             self.log(Register.LOGEXISTS + dbfs[0].logstr())
@@ -275,7 +276,7 @@ class Register(object):
 
         Only [MYSUM...] entries are valid.
         """
-        pgr, pcom, pdir = "", "", "" # previous group, comment and directory 
+        pgr, pcom, pdir = "", "", "" # previous group, comment and directory
         ii = 0 # file no
         jj = 0 # successfully imported entries
         warn = 0 # number of warnings (duplicities)
@@ -368,7 +369,7 @@ class Register(object):
         self.log(Register.LOGUPDATE + dbf.logstr())
         dbf = self.mm.update(dbf)
         if not dbf:
-            print("Error updating the record!")
+            print("Error updating the entry!")
         else:
             self.log(Register.LOGUPDATED + dbf.logstr())
 
@@ -438,7 +439,7 @@ class Register(object):
         """
         log the line to log file
         if this is late commit op, store line for later (in self.latelog buffer)
-        to write stored lines set op to eg. None and call it again 
+        to write stored lines set op to eg. None and call it again
         """
         if self.op in self.oplatecommit and not self.dryrun:
             self.latelog += line + "\n"
@@ -497,15 +498,16 @@ class Register(object):
             speed = (psize + pgs) / (1024*1024*tdif)
         if speed == 0:
             speed = 0
-            eta = "--:--"
+            eta = " --:--"
         else:
             eta = int((self.totalsize - psize - pgs) / (1024*1024*speed))
             speed = int(speed)
             if eta != 0:
-                eta = "  ETA {:02d}:{:02d}".format(int(eta/60), eta % 60)
+                eta = " {:02d}:{:02d}".format(int(eta/60), eta % 60)
             else:
-                eta = ""
-        return "{}{:3d}% {:4d}MB/s{}".format("*" if dupe else "", percent, speed, eta)
+                eta = " 00:00"
+        #return "{}{:3d}% {:3d}MB/s{}".format("*" if dupe else "", percent, speed, eta)
+        return "{}{} {:3d}MB/s{}".format("* " if dupe else "", progressbar(percent,size=21), speed, eta)
 
     def processfiles(self, thorough=True):
         """
@@ -529,7 +531,7 @@ class Register(object):
         for ff in self.files:
             # the file could be: a file, a directory (then add everything recursively), or a wildcard
             ff = os.path.expanduser(ff)
-            
+
             if os.path.exists(ff) and os.path.isdir(ff):
                 matches = []
                 for root, dirnames, filenames in os.walk(ff):
@@ -567,7 +569,7 @@ class Register(object):
         - the defaults files (the first of .regfiledefaults or _.regfiledefaults )
             - the first line is the default group (if not empty)
             - the second line is the default comment (if not empty)
-        - autovalues (group and comment for certain directories, 
+        - autovalues (group and comment for certain directories,
         - command arguments
 
         returns (group, comment) tuple
@@ -585,7 +587,7 @@ class Register(object):
             dirname = os.path.dirname(ff)
             if dirname in self.defaultcache:
                 grcom = self.defaultcache[dirname]
-                if grcom != None: # None means "use arg values" 
+                if grcom != None: # None means "use arg values"
                     gr, com = grcom
             else:
                 # not in cache - read the defaults file
@@ -630,4 +632,4 @@ def runop(args):
     Register(args).go()
 
 if __name__ == "__main__":
-    print("This is a library, please run regfile")
+    print("This is a library, please run regfile. (There's no unittest yet.)")
