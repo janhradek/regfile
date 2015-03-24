@@ -22,7 +22,7 @@ class DBFile(dbbase.Base):
     logre = None
 
     def __init__(self, name=None, group=None, comment=None, size=None, md1=None, md5=None, ed2k=None, idno=None):
-        if idno == 0: 
+        if idno == 0:
             idno = None
         self.name, self.group, self.comment, self.size, self.md1, self.md5, self.ed2k, self.idno = \
             name, group, comment, size, md1, md5, ed2k, idno
@@ -97,4 +97,4 @@ class DBFile(dbbase.Base):
     def fromMySum(ms, group, comment):
         return DBFile(ms.filename, group, comment, ms.size, ms.md1, ms.md5, ms.ed2k)
 
-    
+

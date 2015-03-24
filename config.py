@@ -23,7 +23,7 @@ CFGLOC = "~/.regfile"
 CFGLOC = os.path.expanduser(CFGLOC)
 
 CFG = configparser.ConfigParser()
-CFG["regfile"] = { 
+CFG["regfile"] = {
     "db" : "~/dbfile.sqlite", # location of the database
     "log" : "~/dbfile.log" , # location of the logfile
     "commit" : "auto" , # other values may be: confirm, problem

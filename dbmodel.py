@@ -14,12 +14,12 @@ class Model(object):
         '''
         self.SessionMaker = None
         self.session = None
-        self.engine = None        
+        self.engine = None
         self.dryrun = dryrun
-        
+
         self.init(dbfile)
-        
-        
+
+
     def init(self,dbfile):
         '''
         Initialize the Model
@@ -31,26 +31,26 @@ class Model(object):
         dbfile = os.path.expanduser(dbfile)
         self.engine = sqlalchemy.create_engine('sqlite:///' + dbfile)#, echo=True)
         self.SessionMaker = sqlalchemy.orm.sessionmaker(bind=self.engine)
-        
+
         if not os.path.exists(dbfile):
             dbbase.Base.metadata.create_all(self.engine)
             self.insertExampleData()
 
-        self.session = self.SessionMaker()            
-        
+        self.session = self.SessionMaker()
+
     def insertExampleData(self):
         pass
-        
+
     def close(self):
         '''
         close database connection
-        ''' 
-        if not self.SessionMaker == None:            
+        '''
+        if not self.SessionMaker == None:
             self.SessionMaker.close_all()
         del(self.SessionMaker)
         self.SessionMaker = None
         del(self.engine)
-        
+
         self.engine = None
         self.session = None
 
@@ -84,7 +84,7 @@ class Model(object):
         """
         return all the records (ordered by id?) which matches queried dbf
 
-        query is done only on data properties: size, md1, md5, ed2k 
+        query is done only on data properties: size, md1, md5, ed2k
         if quick is True only size and md1 is queried
         """
         q = self.session.query(dbfile.DBFile).order_by(dbfile.DBFile.idno)
@@ -98,7 +98,7 @@ class Model(object):
         if len(res) == 0:
             return None
         return res
-    
+
     def strtoqstr(self, ss):
         """
         converts a normal string to a query string
@@ -144,7 +144,7 @@ class Model(object):
         update the entry given by dbf.idno with the info from that dbf
 
         only filename, group and comment can be changed
-        returns True if the update was successfull 
+        returns True if the update was successfull
         returns False if the record doesnt exists or nothing was set
         """
         q = self.session.query(dbfile.DBFile).filter(dbfile.DBFile.idno == dbf.idno)
@@ -172,4 +172,4 @@ class Model(object):
             return None
 
         return dbft
-            
+

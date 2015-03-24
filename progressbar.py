@@ -15,7 +15,7 @@ def progressbar(pc,size=15,empty="-",done="=",edges="[]",markfmt=" {}% ",markaft
     assert(len(empty) == 1)
     assert(len(done) == 1)
     if len(edges) == 2:
-        size-= 2 # - parentheses 
+        size-= 2 # - parentheses
     pcs = markfmt.format(pc)
     ticks = 1 + size - len(pcs) # one tick is (100/ticks) percent
     if markafter:
@@ -24,20 +24,20 @@ def progressbar(pc,size=15,empty="-",done="=",edges="[]",markfmt=" {}% ",markaft
         ticks = size
     # done ticks
     td = ticks * pc / 100.0
-    td = int(td) 
+    td = int(td)
     if td == ticks and not markafter:
         td -= 1
     pb = ""
     if td > 0:
         pb = td*done
     if not markafter:
-        pb += pcs 
+        pb += pcs
     pb += empty*(size - len(pb))
     if len(edges) == 2:
         pb = edges[0] + pb + edges[1]
     if markafter:
         pb += " " + pcs
-    return  pb 
+    return  pb
 
 
 if __name__ == "__main__":

@@ -2,17 +2,17 @@
 
 """
 MYSUM is a custom made format of storing hash values of files
-It goes like this: [MYSUM:FILENAME|SIZE|MD5|MD51|E2DK] 
+It goes like this: [MYSUM:FILENAME|SIZE|MD5|MD51|E2DK]
 where:
     MD5 is the md5 of the whole file
     MD51 is the md5 of the first megabyte (1024*1024 bytes)
     ED2K is the edonkey 2000 hash sum  (and crucial part of the ed2k link)
 """
 
-import sys 
+import sys
 import os
 import os.path
-import hashlib 
+import hashlib
 import io
 
 class MySum(object):
@@ -62,7 +62,7 @@ class MySum(object):
 
             raise ValueError("{} isnt a MySum string".format(sumstr))
         sumstr = sumstr[7:-1].split('|')
-        
+
         mysum = MySum(sumstr[0])
         mysum.state = 2
         mysum.size = int(sumstr[1])
@@ -100,7 +100,7 @@ class MySum(object):
         if self.state > 1:
             return
 
-        usedata = self.fullfilename == None or self.fullfilename == "" 
+        usedata = self.fullfilename == None or self.fullfilename == ""
         if not usedata and not os.path.exists(self.fullfilename):
             raise Exception("File " + self.filename + " doesn't exist!")
 
@@ -131,7 +131,7 @@ class MySum(object):
         if self.state == 2:
             return
 
-        usedata = self.fullfilename == None or self.fullfilename == "" 
+        usedata = self.fullfilename == None or self.fullfilename == ""
         if not usedata and not os.path.exists(self.fullfilename):
             raise Exception("File " + self.fullfilename + " doesn't exist!")
 
@@ -152,7 +152,7 @@ class MySum(object):
             if self.stopnow:
                 f.close()
                 return
-            # ed2k is a hash of a string comprised of all the md4 hashes 
+            # ed2k is a hash of a string comprised of all the md4 hashes
             # of all the parts (PARTSIZE bytes long) of the file
             # this is the first part - construting the string of hashes ht1
             m = m4.copy()
@@ -211,7 +211,7 @@ if __name__ == "__main__":
         print("Testing data size {:12} ...     ".format(test[0]), end='')
         mm = MySum(None,b[0:test[0]])
         mm.upgrade(2)
-        r = [mm.md5 == test[1], mm.md1 == test[2], mm.ed2k == test[3]] 
+        r = [mm.md5 == test[1], mm.md1 == test[2], mm.ed2k == test[3]]
         rt = rt and r[0] and r[1] and r[2]
         print("MD5 {}  ".format("OK" if r[0] else "FAIL" ), end='')
         print("MD1 {}  ".format("OK" if r[1] else "FAIL" ), end='')
