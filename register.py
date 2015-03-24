@@ -140,7 +140,12 @@ class Register(object):
 
     def docommit(self, problems):
         if self.confirm or (self.confirmproblem and problems):
-            return (input("Do you wish to commit these changes? [YES/no] ").lower().strip() in ["", "yes", "y"])
+            while True:
+                response = input("Do you wish to commit these changes? [YES/no] ").lower().strip()
+                if (response not in ["", "yes", "y", "no", "n"]):
+                    print("Only yes or no (or just Enter) is a valid choice.")
+                    continue
+                return (response in ["", "yes", "y"])
         return True
 
     def register(self):
