@@ -27,7 +27,7 @@ CFG["regfile"] = {
     "db" : "~/dbfile.sqlite", # location of the database
     "log" : "~/dbfile.log" , # location of the logfile
     "commit" : "auto" , # other values may be: confirm, problem
-    "autovalues" : "", # an autovalues configuration array
+    "pathtemplates" : "", # path templates configuration array
     }
 
 def readcfg():
@@ -50,23 +50,5 @@ def readcfg():
     if not CFG["regfile"]["commit"] in ["auto", "confirm", "problem"]:
         raise ValueError("Unknown entry commit={} in config {}".format(CFG["regfile"]["commit"], CFGLOC))
 
-def cfgvaltolistlist(val, extend=False, strip=False):
-    """a,b,c, \\n d,e,f -> [ [a, b, c] , [d,e,f] ] (extend: [ a,b,c,d,e,f ] )"""
-    ll = []
-    import csv
-    for cc in val.split("\n"): # by end of lines
-        cc = cc.strip()
-        if cc.endswith(","): # remove last comma if present
-            cc = cc[:-1]
-        llcsv = csv.reader([cc], skipinitialspace=True)
-        if strip:
-            llcsv = [x for x in llcsv.__next__() if x.strip()] #list(llcsv)[0]
-        else:
-            llcsv = [x for x in llcsv.__next__()]
-        if not extend:
-            ll.append(llcsv)
-        else:
-            ll.extend(llcsv)
-    return ll
 
 readcfg()

@@ -10,7 +10,7 @@ import datetime
 import dbmodel
 import dbfile
 import mysum
-import autovalues
+from PathTemplates import PathTemplates
 
 from config import CFG, CFGLOC
 from progressbar import progressbar
@@ -58,7 +58,7 @@ class Register(object):
         self.oplatecommit = [ self.register, self.batchimport ]
         self.logf = None # log file
         self.latelog = "" # log buffer for latecommit operations
-        self.av = None  # autovalues
+        self.pathTemplates = None  # path templates
         self.totalsize = 0 # the size of all the files to register/check in bytes
         self.defaultcache = dict() # cache with default values
         self.cols = 80 # terminal columns (accurate where supported - Linux/Unix)
@@ -574,7 +574,7 @@ class Register(object):
         - the defaults files (the first of .regfiledefaults or _.regfiledefaults )
             - the first line is the default group (if not empty)
             - the second line is the default comment (if not empty)
-        - autovalues (group and comment for certain directories,
+        - path templates (group and comment for certain directories)
         - command arguments
 
         returns (group, comment) tuple
@@ -626,10 +626,10 @@ class Register(object):
             if not os.path.isabs(ff):
                 ff = os.path.join(os.getcwd(), ff)
 
-            if self.av == None:
-                self.av = autovalues.AutoValues()
+            if self.pathTemplates == None:
+                self.pathTemplates = PathTemplates.fromConfig(CFG["regfile"]["pathtemplates"])
 
-            gr, com = self.av.getgroupcomment(ff, self.group, self.comment, gr, com, imp)
+            gr, com = self.pathTemplates.apply(ff, self.group, self.comment, gr, com, imp)
 
         return (gr,com)
 
