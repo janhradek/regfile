@@ -70,7 +70,7 @@ class DBFile(dbbase.Base):
         only items with valid (not None) values will be updated
         work by the state
         """
-        self.name = ms.filename
+        self.name = ms.fileName
         if ms.state >= 1:
             self.size = ms.size
             self.md1 = ms.md1

@@ -9,7 +9,7 @@ import datetime
 
 import dbmodel
 import dbfile
-import mysum
+from MySum import MySum
 from PathTemplates import PathTemplates
 
 from config import CFG, CFGLOC
@@ -182,7 +182,7 @@ class Register(object):
                     dbf.group, dbf.comment = gr, com
                 self.printstatus(ii, sff, "Quick")
                 # stage 1 - silent
-                ms = mysum.MySum(ff)
+                ms = MySum(ff)
                 ms.upgrade(1)
                 dbf.update(ms)
                 dbfs = self.mm.querydata(dbf, quick=True)
@@ -206,7 +206,7 @@ class Register(object):
                         self.printstatus(ii, sff, self.msgpgs(ms,psize,tstart,dupe))
                         time.sleep(0.25)
                     except KeyboardInterrupt:
-                        ms.stopnow = True
+                        ms.stopRequested = True
                         self.printstatus(ii, sff, "Interrupted")
                         #fail = fail+1
                         failfiles.append(ff + "    (Interrupted)")
@@ -214,7 +214,7 @@ class Register(object):
                         #break
                         raise
                 tt.join()
-                #if ms.stopnow:
+                #if ms.stopRequested:
                 #    print()
                 #    break
                 psize = psize + ms.size
@@ -308,7 +308,7 @@ class Register(object):
                     ll = ll + 1
                     self.printstatus(ii, ff, "L" + str(ll))
                     try:
-                        ms = mysum.MySum.fromstring(line)
+                        ms = MySum.fromString(line)
                     except ValueError:
                         self.printstatus(ii, ff, "not a MYSUM!")
                         print()
@@ -399,7 +399,7 @@ class Register(object):
         else:
             for dbf in ll:
                 if self.queryasmysum:
-                    print(mysum.MySum.fromdbfile(dbf).asstring())
+                    print(MySum(dbf.name, dbf.size, dbf.md1, dbf.md5, dbf.ed2k).toString())
                 elif self.queryverbose:
                     print(dbf.prettystr(True))
                 elif self.queryed2k:
@@ -487,7 +487,7 @@ class Register(object):
         """
         create a progress message from the given info
         """
-        pgs = ms.pgs
+        pgs = ms.processedSize
         size = ms.size
         tnow = time.time()
         if pgs == None:
