@@ -7,12 +7,11 @@ import time
 import sys
 import datetime
 
+from Configuration import Configuration
 import dbmodel
 import dbfile
 from MySum import MySum
 from PathTemplates import PathTemplates
-
-from config import CFG, CFGLOC
 from progressbar import progressbar
 
 class Register(object):
@@ -32,9 +31,11 @@ class Register(object):
         """
         initialize the register, read parsed arguments, set the desired operation (op)
         """
-        # config
-        self.dbfile = CFG["regfile"]["db"]
-        self.logfile = CFG["regfile"]["log"]
+        # setup configuration {{{
+        self.configuration  = Configuration()
+        self.dbfile         = self.configuration["db"]
+        self.logfile        = self.configuration["log"]
+        # }}}
 
         # arguments
         self.idno = args.idno
@@ -63,15 +64,14 @@ class Register(object):
         self.defaultcache = dict() # cache with default values
         self.cols = 80 # terminal columns (accurate where supported - Linux/Unix)
 
-        #if CFG["regfile"]["default"] == "True":
-        if CFG["regfile"].getboolean("default"):
+        if (self.configuration.getboolean("default")):
             import textwrap as tw
             print(tw.fill(tw.dedent("""
                         The configuration file '{0}' didn't exist, so a default has been created!
                         That also means that a default location for the database '{1}' is being
                         used. Review and change the configuration if necessary! The requested
                         operation has been canceled. (This warning is displayed only once!)
-                        """.format(CFGLOC, self.dbfile))
+                        """.format(self.configuration.path, self.dbfile))
                 , initial_indent="!!!   ", subsequent_indent="!!!   "))
             return
 
@@ -133,7 +133,7 @@ class Register(object):
         if args.commit: # specified on command line
             cc = args.commit
         else: # get value from config instead
-            cc = CFG["regfile"]["commit"]
+            cc = self.configuration["commit"]
 
         self.confirm = (cc == "confirm")
         self.confirmproblem = (cc == "problem")
@@ -627,7 +627,7 @@ class Register(object):
                 ff = os.path.join(os.getcwd(), ff)
 
             if self.pathTemplates == None:
-                self.pathTemplates = PathTemplates.fromConfig(CFG["regfile"]["pathtemplates"])
+                self.pathTemplates = PathTemplates.fromConfig(self.configuration["pathtemplates"])
 
             gr, com = self.pathTemplates.apply(ff, self.group, self.comment, gr, com, imp)
 
