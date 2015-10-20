@@ -533,11 +533,19 @@ class Register(object):
 
         rf = [] # real files
         ts = 0 # total size
+        if (os.name == 'posix'):
+            cwd = os.popen('pwd').read().strip('\n')
+        else:
+            cwd = os.getcwd()
+
         for ff in self.files:
             # the file could be: a file, a directory (then add everything recursively), or a wildcard
             ff = os.path.expanduser(ff)
 
-            if os.path.exists(ff) and os.path.isdir(ff):
+            if (not os.path.isabs(ff)):
+                ff = os.path.normpath(os.path.join(cwd, ff))
+
+            if (os.path.exists(ff) and os.path.isdir(ff)):
                 matches = []
                 for root, dirnames, filenames in os.walk(ff):
                     for filename in fnmatch.filter(filenames, '*'):
@@ -545,9 +553,8 @@ class Register(object):
                         ts = ts + os.stat(fn)[6]
                         rf.append(fn)
             else:
-                root = os.getcwd()
                 for fn in glob.iglob(ff):
-                    fn = os.path.join(root, fn)
+                    fn = os.path.join(cwd, fn)
                     ts = ts + os.stat(fn)[6]
                     rf.append(fn)
         self.totalsize = ts
