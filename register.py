@@ -7,7 +7,7 @@ import time
 import sys
 import datetime
 
-from Configuration import Configuration
+from RegfileConfiguration import RegfileConfiguration
 import dbmodel
 import dbfile
 from MySum import MySum
@@ -32,9 +32,9 @@ class Register(object):
         initialize the register, read parsed arguments, set the desired operation (op)
         """
         # setup configuration {{{
-        self.configuration  = Configuration()
-        self.dbfile         = self.configuration["db"]
-        self.logfile        = self.configuration["log"]
+        self.configuration  = RegfileConfiguration()
+        self.dbfile         = self.configuration[RegfileConfiguration.DB]
+        self.logfile        = self.configuration[RegfileConfiguration.LOG]
         # }}}
 
         # arguments
@@ -64,7 +64,7 @@ class Register(object):
         self.defaultcache = dict() # cache with default values
         self.cols = 80 # terminal columns (accurate where supported - Linux/Unix)
 
-        if (self.configuration.getboolean("default")):
+        if (not self.configuration.fromConfigFile):
             import textwrap as tw
             print(tw.fill(tw.dedent("""
                         The configuration file '{0}' didn't exist, so a default has been created!
@@ -133,7 +133,7 @@ class Register(object):
         if args.commit: # specified on command line
             cc = args.commit
         else: # get value from config instead
-            cc = self.configuration["commit"]
+            cc = self.configuration[RegfileConfiguration.COMMIT]
 
         self.confirm = (cc == "confirm")
         self.confirmproblem = (cc == "problem")
@@ -634,7 +634,7 @@ class Register(object):
                 ff = os.path.join(os.getcwd(), ff)
 
             if self.pathTemplates == None:
-                self.pathTemplates = PathTemplates.fromConfig(self.configuration["pathtemplates"])
+                self.pathTemplates = PathTemplates.fromConfig(self.configuration[RegfileConfiguration.PATH_TEMPLATES])
 
             gr, com = self.pathTemplates.apply(ff, self.group, self.comment, gr, com, imp)
 
