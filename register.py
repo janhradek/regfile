@@ -172,10 +172,13 @@ class Register(object):
                         pgr, pcom = gr, com
                     dbf.group, dbf.comment = gr, com
                 self.printstatus(ii, sff, "Quick")
+
                 # stage 1 - silent
                 ms = MySum(ff)
                 ms.upgrade(1)
-                dbf.update(ms)
+                dbf.fileSize = ms.fileSize
+                dbf.md1 = ms.md1
+
                 dbfs = self.mm.querydata(dbf, quick=True)
                 if register:
                     if not dbfs is None:
@@ -200,7 +203,9 @@ class Register(object):
                         raise
                 tt.join()
                 psize = psize + ms.fileSize
-                dbf.update(ms)
+
+                dbf.md5     = ms.md5
+                dbf.ed2k    = ms.ed2k
                 dbfs = self.mm.querydata(dbf)
                 if register:
                     if dbfs is None:

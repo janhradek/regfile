@@ -27,21 +27,6 @@ class DBFile(DBBase):
         self.fileName, self.group, self.comment, self.fileSize, self.md1, self.md5, self.ed2k, self.fileId = \
             fileName, group, comment, fileSize, md1, md5, ed2k, fileId
 
-    def update(self, ms):
-        """
-        update from mysum
-
-        only items with valid (not None) values will be updated
-        work by the state
-        """
-        self.fileName = ms.fileName
-        if ms.state >= 1:
-            self.fileSize = ms.fileSize
-            self.md1 = ms.md1
-        if ms.state == 2:
-            self.md5 = ms.md5
-            self.ed2k = ms.ed2k
-
     def match(self, other, nametoo=False):
         rr = False
         if (not isinstance(self.fileSize, int)):
