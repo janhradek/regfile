@@ -97,20 +97,7 @@ class ConfigurationBase(object):
         # read the configuration from the file or write the default
         # configuration and mark whether or not the configuration originates
         # from the configuration file
-        self._fromConfigFile = self._readOrCreateFile(restrictions)
-        # }}}
-
-
-    @property
-    def fromConfigFile(self):
-        # DOC {{{
-        """Returns True if the configuration originates from the configuration
-        file, False if the default configuration had to be used.
-        """
-        # }}}
-
-        # CODE {{{
-        return self._fromConfigFile
+        self.fromConfigFile = self._readOrCreateFile(restrictions)
         # }}}
 
 
@@ -170,7 +157,7 @@ class ConfigurationBase(object):
         # }}}
 
         # replace sentinels with defaults and sanitize and check all values
-        self._useDefaultAndSanitizeAndCheckAllValues(restrictions)
+        self._useDefaultAndSanitizeAndCheckAllValues(restrictions, fileExists)
 
         # create the configuration file if it does not exist {{{
         if (not fileExists):
@@ -202,7 +189,7 @@ class ConfigurationBase(object):
         # }}}
 
 
-    def _useDefaultAndSanitizeAndCheckAllValues(self, restrictions):
+    def _useDefaultAndSanitizeAndCheckAllValues(self, restrictions, fileExists):
         # DOC {{{
         """Stores default values for all missing options and sanitizes and
         checks all options.
@@ -211,6 +198,8 @@ class ConfigurationBase(object):
 
             restrictions -- a bitwise combination of STRICT_XXX that describes
                 how to handle missing, surplus or non-sane values
+
+            fileExists -- if False than missing values restriction is ignored
         """
         # }}}
 
@@ -267,8 +256,8 @@ class ConfigurationBase(object):
                 continue
             # }}}
 
-            # raise an exception if strict handling of missing values is required {{{
-            if ((restrictions & ConfigurationBase.RESTRICT_MISSING) != 0):
+            # raise an exception if the file exists and strict handling of missing values is required {{{
+            if ((fileExists) and (restrictions & ConfigurationBase.RESTRICT_MISSING) != 0):
                 raise ConfigurationError("Configuration option '[{0.section}].{0.name}' is missing in the config file!".format(option))
             # }}}
 
