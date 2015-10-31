@@ -92,7 +92,7 @@ class MySum(object):
 
         # store the parameters {{{
         self.file_          = file_
-        self.fileSize           = fileSize
+        self.fileSize       = fileSize
         self.md1            = md1
         self.md5            = md5
         self.ed2k           = ed2k
