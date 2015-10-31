@@ -430,7 +430,7 @@ class Register(object):
                 self.logf = open(self.logfile, "w")
             else:
                 self.logf = open(self.logfile, "a")
-            self.logf.write("# "+datetime.datetime.now().ctime()+"\n")
+            self.logf.write(self.LOGCOMMENT+datetime.datetime.now().ctime()+"\n")
         if line:
             self.logf.write(line+"\n")
 
