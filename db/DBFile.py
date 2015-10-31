@@ -80,7 +80,6 @@ class DBFile(DBBase):
 
     def match(self, other, nametoo=False):
         rr = False
-        sizematch = False
         if not type(self.fileSize) is int:
             raise TypeError("dbfile.fileSize must be an int! (self)")
         if not type(other.fileSize) is int:
