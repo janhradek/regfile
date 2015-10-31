@@ -18,8 +18,6 @@ class Register(object):
     DEFAULTFILES = ["_.regfiledefaults", ".regfiledefaults"]
     LOGCOMMENT="# "
     LOGADD="+  "
-    LOGEXISTS="?  "
-    LOGEXISTING="?@ "
     LOGUPDATE="!  "
     LOGUPDATED="!! "
     RULER=" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - "
@@ -213,11 +211,8 @@ class Register(object):
                         self.printstatus(ii, sff, "New entry " + str(dbf.fileId))
                     else:
                         if dbf.match(dbfs[0], nametoo=True):
-                            self.log(Register.LOGEXISTS + dbfs[0].logstr())
                             self.printstatus(ii, sff, "Already registered (full match) as " + str(dbfs[0].fileId))
                         else:
-                            self.log(Register.LOGEXISTS + dbf.logstr())
-                            self.log(Register.LOGEXISTING + dbfs[0].logstr())
                             self.printstatus(ii, sff, "Already registered (data match) as " + str(dbfs[0].fileId))
                         failfiles.append(ff)
                 else:
@@ -303,11 +298,8 @@ class Register(object):
                         warn = warn + 1
                         dbfs = self.mm.querydata(dbf)
                         if dbf.match(dbfs[0], nametoo=True):
-                            self.log(Register.LOGEXISTS + dbfs[0].logstr())
                             self.printstatus(ii, ff, "Already registered (full match) as {} L{}".format(dbfs[0].fileId, ll))
                         else:
-                            self.log(Register.LOGEXISTS + dbf.logstr())
-                            self.log(Register.LOGEXISTING + dbfs[0].logstr())
                             self.printstatus(ii, ff, "Already registered (data match) as {} L{}".format(dbfs[0].fileId, ll))
                         print()
                         continue
