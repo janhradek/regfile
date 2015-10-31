@@ -326,7 +326,7 @@ class Register(object):
                         print()
                 print()
         print(self.RULER)
-        print("About to import {} entries ({} warnings) from {} files out of {}".format(jj, warn, len(self.files) - len(self.failfiles), len(self.files)))
+        print("About to import {} entries ({} warnings) from {} files out of {}".format(jj, warn, len(self.files) - len(failfiles), len(self.files)))
         if len(failfiles) > 0:
             print("A list of files that failed:")
             for ff in failfiles:
