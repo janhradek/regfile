@@ -163,7 +163,8 @@ class Register(object):
                     print("Directory [{}]".format(cdir))
                     pdir = cdir
 
-                dbf = DBFile(ff)
+                dbf = DBFile(fileName = sff)
+
                 if register: # group and comment
                     gr, com = self.getgroupcomment(ff)
                     if gr != pgr or com != pcom:
