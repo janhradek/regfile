@@ -509,7 +509,6 @@ class Register(object):
         elif self.files is None:
             return
         elif not type(self.files) is list:
-            print(self.files, type(self.files))
             raise ValueError("The files is not a list nor a string")
 
         if not thorough:
