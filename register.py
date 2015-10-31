@@ -197,8 +197,6 @@ class Register(object):
                         time.sleep(0.25)
                     except KeyboardInterrupt:
                         ms.requestStop()
-                        self.printstatus(ii, sff, "Interrupted")
-                        failfiles.append(ff + "    (Interrupted)")
                         tt.join()
                         raise
                 tt.join()
@@ -230,10 +228,8 @@ class Register(object):
                         self.printstatus(ii, sff, stat)
                 print()
             except KeyboardInterrupt:
-                fail = ff + "    (Interrupted)"
-                if failfiles[-1] != fail: # very likely to happen if interrupted in thread
-                    self.printstatus(ii, sff, "Interrupted")
-                    failfiles.append(fail)
+                self.printstatus(ii, sff, "Interrupted")
+                failfiles.append(ff + "    (Interrupted)")
                 print()
                 break
 
