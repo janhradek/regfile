@@ -22,7 +22,6 @@ class DBModel(object):
     def init(self,dbfile):
         '''
         Initialize the Model
-        dbfile is optional
         '''
         self.close()
         #if dbfile==None:
