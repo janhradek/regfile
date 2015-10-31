@@ -293,7 +293,7 @@ class Register(object):
                         print()
                         fail = True
                         break
-                    self.printstatus(ii, ff, ms.filename + " L" + str(ll))
+                    self.printstatus(ii, ff, ms.fileName + " L" + str(ll))
 
                     dbf = DBFile.fromMySum(ms, gr, com)
                     if dbf in self.mm:
