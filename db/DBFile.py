@@ -27,42 +27,6 @@ class DBFile(DBBase):
         self.fileName, self.group, self.comment, self.fileSize, self.md1, self.md5, self.ed2k, self.fileId = \
             fileName, group, comment, fileSize, md1, md5, ed2k, fileId
 
-    def prettystr(self, verbose):
-        ss = "[{:5d}] '{}' s:{}\n".format(self.fileId, self.fileName, self.fileSize)
-        if self.group != None:
-            ss = ss + "{:7} g:{}\n".format("", self.group)
-        if self.comment != None:
-            ss = ss + "{:7} c:{}\n".format("", self.comment)
-        if verbose:
-            ss = ss + "{:7} md1:{}  md5:{}  ed2k:{}\n".format("", self.md1, self.md5, self.ed2k)
-        return ss
-
-    def ed2klink(self):
-        """return ed2k link"""
-        # ed2k://|file|register.py|25201|2e8949873370c9af2fc8c1a1e01d83ec|/
-        return "ed2k://|file|{}|{}|{}|/".format(self.fileName, self.fileSize, self.ed2k)
-
-    def logstr(self):
-        fileId = 0 if self.fileId is None else int(self.fileId)
-        return "DBF{:06d}|n:{}|g:{}|c:{}|s:{}|md1:{}|md5:{}|ed2k:{}|".format(fileId, self.fileName, \
-                self.group if self.group else "", \
-                self.comment if self.comment else "", \
-                self.fileSize, self.md1, self.md5, self.ed2k)
-
-    @staticmethod
-    def fromlogstr(ls):
-        import re
-        if DBFile.logre == None:
-            DBFile.logre = re.compile(r"^DBF(\d*)\|n:(.*)\|g:(.*)\|c:(.*)\|s:(.*)\|md1:(.*)\|md5:(.*)\|ed2k:(.*)\|$")
-        rr = DBFile.logre.match(ls)
-        if not rr:
-            raise ValueError("The string " + ls + " doesnt match the logline!")
-        dbf = DBFile(rr.group(2),rr.group(3),rr.group(4),rr.group(5),rr.group(6),rr.group(7),rr.group(8),int(rr.group(1)))
-        if dbf.logstr().strip() != ls.strip():
-            print(dbf.logstr().strip())
-            print(ls.strip())
-        return dbf
-
     def update(self, ms):
         """
         update from mysum
@@ -95,5 +59,3 @@ class DBFile(DBBase):
     @staticmethod
     def fromMySum(ms, group, comment):
         return DBFile(ms.fileName, group, comment, ms.fileSize, ms.md1, ms.md5, ms.ed2k)
-
-

@@ -1,8 +1,10 @@
 import datetime
 import fnmatch
+import functools
 import glob
 import os
 import os.path
+import re
 import threading
 import time
 
@@ -21,6 +23,17 @@ class Register(object):
     LOGUPDATE="!  "
     LOGUPDATED="!! "
     RULER=" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - "
+
+    LOG_DBFILE_RE = re.compile(
+                r"^DBF(?P<fileId>\d*)\|" +
+                r"n:(?P<fileName>.*)\|" +
+                r"g:(?P<group>.*)\|" +
+                r"c:(?P<comment>.*)\|" +
+                r"s:(?P<fileSize>\d*)\|" +
+                r"md1:(?P<md1>.*)\|" +
+                r"md5:(?P<md5>.*)\|" +
+                r"ed2k:(?P<ed2k>.*)\|$"
+    )
 
     def __init__(self, args):
         """
@@ -244,7 +257,7 @@ class Register(object):
             elif self.docommit(failfiles):
                 self.mm.commit()
                 for storedDBFile in dbFilesToStore:
-                    self.log(Register.LOGADD + storedDBFile.logstr())
+                    self.log(Register.LOGADD + self._formatDBFileForLog(storedDBFile))
                 print("Done.")
             else:
                 print("Aborted!")
@@ -329,7 +342,7 @@ class Register(object):
         if self.docommit(failfiles):
             self.mm.commit()
             for storedDBFile in allDBFilesToStore:
-                self.log(Register.LOGADD + storedDBFile.logstr())
+                self.log(Register.LOGADD + self._formatDBFileForLog(storedDBFile))
             print("Done.")
         else:
             print("Aborted!")
@@ -349,12 +362,12 @@ class Register(object):
                 ff = self.files[0]
 
         dbf = DBFile(fileId=self.fileId, fileName=ff, group=self.group, comment=self.comment)
-        self.log(Register.LOGUPDATE + dbf.logstr())
+        self.log(Register.LOGUPDATE + self._formatDBFileForLog(dbf))
         dbf = self.mm.update(dbf)
         if not dbf:
             print("Error updating the entry!")
         else:
-            self.log(Register.LOGUPDATED + dbf.logstr())
+            self.log(Register.LOGUPDATED + self._formatDBFileForLog(dbf))
 
     def query(self):
         """
@@ -375,15 +388,17 @@ class Register(object):
         if ll == None:
             print("No record matches the query!")
         else:
+            formatDBFileMethod = self._formatDBFile
+            if self.queryasmysum:
+                formatDBFileMethod = self._formatDBFileAsMysum
+            elif self.queryed2k:
+                formatDBFileMethod = self._formatDBFileAsED2K
+            elif self.queryverbose:
+                formatDBFileMethod = functools.partial(self._formatDBFile, verbose = True)
+
             for dbf in ll:
-                if self.queryasmysum:
-                    print(str(MySum(dbf.fileName, dbf.fileSize, dbf.md1, dbf.md5, dbf.ed2k)))
-                elif self.queryverbose:
-                    print(dbf.prettystr(True))
-                elif self.queryed2k:
-                    print(dbf.ed2klink())
-                else:
-                    print(dbf.prettystr(False))
+                print(formatDBFileMethod(dbf))
+
 
     def resetfromlog(self):
         """
@@ -408,10 +423,10 @@ class Register(object):
         with open(self.logfile, "r") as self.logf:
             for ll in self.logf:
                 if ll.startswith(Register.LOGADD):
-                    dbf = DBFile.fromlogstr(ll[len(Register.LOGADD):])
+                    dbf = self._dbFileFromLog(ll[len(Register.LOGADD):])
                     self.mm.insert(dbf, commit=False)
                 elif ll.startswith(Register.LOGUPDATED):
-                    dbf = DBFile.fromlogstr(ll[len(Register.LOGUPDATED):])
+                    dbf = self._dbFileFromLog(ll[len(Register.LOGUPDATED):])
                     self.mm.commit()
                     self.mm.update(dbf, setall=True)
         self.mm.commit()
@@ -608,6 +623,152 @@ class Register(object):
             gr, com = self.pathTemplates.apply(ff, self.group, self.comment, gr, com, imp)
 
         return (gr,com)
+
+
+    @staticmethod
+    def _formatDBFileAsMysum(dbFile):
+        # DOC {{{
+        """Returns a string with the specified DBFile()'s properties in
+        the MySum format.
+
+        Parameters
+
+            dbFile -- a DBFile() to format
+        """
+        # }}}
+
+        # CODE {{{
+        return MySum.format(
+            fileName    = dbFile.fileName,
+            fileSize    = dbFile.fileSize,
+            md5         = dbFile.md5,
+            md1         = dbFile.md1,
+            ed2k        = dbFile.ed2k,
+        )
+        # }}}
+
+
+    @staticmethod
+    def _formatDBFileAsED2K(dbFile):
+        # DOC {{{
+        """Returns a string containing the specified DBFile()'s as an
+        ED2K link.
+
+        Parameters
+
+            dbFile -- a DBFile() to format
+        """
+        # }}}
+
+        # CODE {{{
+        return "ed2k://|file|{fileName}|{fileSize}|{ed2k}|/".format(
+            fileName    = dbFile.fileName,
+            fileSize    = dbFile.fileSize,
+            ed2k        = dbFile.ed2k,
+        )
+        # }}}
+
+
+    @staticmethod
+    def _formatDBFile(dbFile, verbose = False):
+        # DOC {{{
+        """Formats the specified DBFile()'s properties to a string and
+        returns it.
+
+        Parameters
+
+            dbFile -- a DBFile() to format
+
+            verbose -- (optional) if True checksums are included
+        """
+        # }}}
+
+        # CODE {{{
+        # a list of lines of formated DBFile()'s properties
+        formatedLines = []
+
+        # print file's ID, name and size {{{
+        formatedLines.append("[{fileId:5d}] '{fileName}' s:{fileSize}".format(
+            fileId      = dbFile.fileId,
+            fileName    = dbFile.fileName,
+            fileSize    = dbFile.fileSize,
+        ))
+        # }}}
+
+        # print the file's group if it is not empty {{{
+        if (dbFile.group):
+            formatedLines.append("        group: {}".format(dbFile.group))
+        # }}}
+
+        # print the file's comment if it is not empty {{{
+        if (dbFile.comment):
+            formatedLines.append("        comment: {}".format(dbFile.comment))
+        # }}}
+
+        # print file's checksums if verbosity is set {{{
+        if (verbose):
+            formatedLines.append("        md1:{md1}  md5:{md5}  ed2k:{ed2k}".format(
+                md1     = dbFile.md1,
+                md5     = dbFile.md5,
+                ed2k    = dbFile.ed2k
+            ))
+        # }}}
+
+        # join all the lines and return the resulting string for formated DBFile()'s properties
+        return "\n".join(formatedLines)
+        # }}}
+
+
+    @staticmethod
+    def _formatDBFileForLog(dbFile):
+        # DOC {{{
+        """Returns a string representation of the specified dbFile for the log.
+
+        Parameters
+
+            dbFile -- a DBFile() to format
+        """
+        # }}}
+
+        # CODE {{{
+        return ("DBF{fileId:06d}|n:{fileName}|" +
+                "g:{group}|c:{comment}|s:{fileSize}|" +
+                "md1:{md1}|md5:{md5}|ed2k:{ed2k}|").format(
+                    fileId      = dbFile.fileId if (dbFile.fileId is not None) else 0,
+                    fileName    = dbFile.fileName,
+                    group       = dbFile.group if (dbFile.group is not None) else "",
+                    comment     = dbFile.comment if (dbFile.comment is not None) else "",
+                    fileSize    = dbFile.fileSize,
+                    md1         = dbFile.md1,
+                    md5         = dbFile.md5,
+                    ed2k        = dbFile.ed2k,
+        )
+        # }}}
+
+
+    @staticmethod
+    def _dbFileFromLog(ls):
+        rr = Register.LOG_DBFILE_RE.match(ls)
+        if not rr:
+            raise ValueError("The string " + ls + " doesnt match the logline!")
+
+        matchGroups = rr.groupdict()
+
+        dbf = DBFile(
+                fileId      = int(matchGroups['fileId']),
+                fileName    = matchGroups['fileName'],
+                fileSize    = int(matchGroups['fileSize']),
+                group       = matchGroups['group'],
+                comment     = matchGroups['comment'],
+                md1         = matchGroups['md1'],
+                md5         = matchGroups['md5'],
+                ed2k        = matchGroups['ed2k'],
+        )
+
+        assert (Register._formatDBFileForLog(dbf).strip() == ls.strip())
+
+        return dbf
+
 
 def runop(args):
     Register(args).go()
