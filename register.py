@@ -281,6 +281,8 @@ class Register(object):
             with open(ff, "r") as fsum:
                 ll = 0
                 fail = False
+
+                dbFilesToStoreFromImportFile = []
                 for line in fsum:
                     ll = ll + 1
                     self.printstatus(ii, ff, "L" + str(ll))
@@ -304,8 +306,7 @@ class Register(object):
                         print()
                         continue
                     jj = jj + 1
-                    self.mm.insert(dbf, commit=False)
-                    self.log(Register.LOGADD + dbf.logstr())
+                    dbFilesToStoreFromImportFile.append(dbf)
                 if fail:
                     if ll == 1:
                         self.printstatus(ii, ff, "FAIL")
@@ -316,6 +317,10 @@ class Register(object):
                         self.printstatus(ii, ff, "FAIL " + sll)
                         failfiles.append(ff + "       (" + sll + ")")
                         print()
+                else:
+                    for dbf in dbFilesToStoreFromImportFile:
+                        self.mm.insert(dbf, commit=False)
+                        self.log(Register.LOGADD + dbf.logstr())
                 print()
         print(self.RULER)
         print("About to import {} entries ({} warnings) from {} files out of {}".format(jj, warn, len(self.files) - len(failfiles), len(self.files)))
