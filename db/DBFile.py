@@ -44,9 +44,9 @@ class DBFile(DBBase):
 
     def match(self, other, nametoo=False):
         rr = False
-        if not type(self.fileSize) is int:
+        if (not isinstance(self.fileSize, int)):
             raise TypeError("dbfile.fileSize must be an int! (self)")
-        if not type(other.fileSize) is int:
+        if (not isinstance(other.fileSize, int)):
             raise TypeError("dbfile.fileSize must be an int! (other)")
 
         if self.fileSize == other.fileSize and self.md1 == other.md1 and self.md5 == other.md5 and self.ed2k == other.ed2k:

@@ -123,7 +123,7 @@ class DBModel(object):
         """
         insert the specified dbf (which might be a list of files) into the database
         """
-        if not type(dbfs) is list:
+        if (not isinstance(dbfs, list)):
             dbfs = [ dbfs ]
 
         ins = False # at least something was instered

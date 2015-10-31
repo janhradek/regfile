@@ -354,7 +354,7 @@ class Register(object):
         Only filename, comment and group can be changed.
         """
         ff = None
-        if type(self.files) is list:
+        if (isinstance(self.files, list)):
             if len(self.files) > 1:
                 print("Please provide just one name or none ar all!")
                 return
@@ -376,7 +376,7 @@ class Register(object):
         Only parts of the entry have to match the given parameters (ilike)
         """
         ff = None
-        if type(self.files) is list:
+        if (isinstance(self.files, list)):
             if len(self.files) > 1:
                 print("Please provide just one name or none ar all!")
                 return
@@ -504,11 +504,11 @@ class Register(object):
 
         if thorough is True the list of directories, files and wildcards is turned into a list of real filenames (and total size is computed)
         """
-        if type(self.files) is str:
+        if (isinstance(self.files, str)):
             self.files = [ self.files ]
         elif self.files is None:
             return
-        elif not type(self.files) is list:
+        elif (not isinstance(self.files, list)):
             raise ValueError("The files is not a list nor a string")
 
         if not thorough:
