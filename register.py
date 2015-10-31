@@ -179,16 +179,14 @@ class Register(object):
                 dbf.fileSize = ms.fileSize
                 dbf.md1 = ms.md1
 
-                dbfs = self.mm.querydata(dbf, quick=True)
-                if register:
-                    if not dbfs is None:
-                        fileMightBeRegistered = True
-                else: # check
-                    if dbfs is None:
-                        self.printstatus(ii, sff, "FAIL")
-                        failfiles.append(ff)
-                        print() # newline
-                        continue
+                fileMightBeRegistered = self._determineFileMightBeRegistered(dbf)
+
+                if ((not register) and (not fileMightBeRegistered)):
+                    self.printstatus(ii, sff, "FAIL")
+                    failfiles.append(ff)
+                    print()
+                    continue
+
                 tt = threading.Thread(target=ms.upgrade,args=[2])
                 tt.start()
                 while tt.is_alive():
@@ -252,6 +250,26 @@ class Register(object):
                 print("Done.")
             else:
                 print("Aborted!")
+
+
+    def _determineFileMightBeRegistered(self, dbf):
+        # DOC {{{
+        """Returns True if there is a registered file of the size and the MD5
+        sum of the first megabyte specified in the provided DBFile(), False
+        otherwise.
+
+        Parameters
+
+            dbf -- an instance of DBFile()
+        """
+        # }}}
+
+        # CODE {{{
+        dbfs = self.mm.querydata(dbf, quick=True)
+
+        return (dbfs is not None)
+         # }}}
+
 
     def batchimport(self):
         """
