@@ -47,9 +47,7 @@ class Register(object):
         # defaults
         self.mm = None # database model
         self.op = None # operation function
-        self.oplatecommit = [ self.register, self.batchimport ]
         self.logf = None # log file
-        self.latelog = "" # log buffer for latecommit operations
         self.pathTemplates = None  # path templates
         self.totalsize = 0 # the size of all the files to register/check in bytes
         self.defaultcache = dict() # cache with default values
@@ -103,9 +101,6 @@ class Register(object):
                 self.op()
         finally:
             if once:
-                if self.latelog:
-                    self.op = None
-                    self.log(None)
                 if self.logf:
                     self.logf.close()
                 if self.mm:
@@ -147,6 +142,7 @@ class Register(object):
         ii = 0
         #fail = 0
         failfiles = []
+        dbFilesToStore = []
         for ff in self.files:
             ii = ii + 1
             dupe = False
@@ -207,8 +203,8 @@ class Register(object):
                 if register:
                     if dbfs is None:
                         self.mm.insert(dbf, commit=False)
-                        self.log(Register.LOGADD + dbf.logstr())
                         self.printstatus(ii, sff, "New entry " + str(dbf.fileId))
+                        dbFilesToStore.append(dbf)
                     else:
                         if dbf.match(dbfs[0], nametoo=True):
                             self.printstatus(ii, sff, "Already registered (full match) as " + str(dbfs[0].fileId))
@@ -248,9 +244,10 @@ class Register(object):
                 print("No files were registered!")
             elif self.docommit(failfiles):
                 self.mm.commit()
+                for storedDBFile in dbFilesToStore:
+                    self.log(Register.LOGADD + storedDBFile.logstr())
                 print("Done.")
             else:
-                self.latelog = ""
                 print("Aborted!")
 
     def batchimport(self):
@@ -264,6 +261,8 @@ class Register(object):
         jj = 0 # successfully imported entries
         warn = 0 # number of warnings (duplicities)
         failfiles = [] # a list of files that failed to import
+        allDBFilesToStore = []
+
         for ff in self.files:
             ii = ii + 1
             cdir = os.path.dirname(ff) # directory
@@ -320,7 +319,7 @@ class Register(object):
                 else:
                     for dbf in dbFilesToStoreFromImportFile:
                         self.mm.insert(dbf, commit=False)
-                        self.log(Register.LOGADD + dbf.logstr())
+                    allDBFilesToStore.extend(dbFilesToStoreFromImportFile)
                 print()
         print(self.RULER)
         print("About to import {} entries ({} warnings) from {} files out of {}".format(jj, warn, len(self.files) - len(failfiles), len(self.files)))
@@ -330,9 +329,10 @@ class Register(object):
                 print("    " + ff)
         if self.docommit(failfiles):
             self.mm.commit()
+            for storedDBFile in allDBFilesToStore:
+                self.log(Register.LOGADD + storedDBFile.logstr())
             print("Done.")
         else:
-            self.latelog = ""
             print("Aborted!")
 
     def setdata(self):
@@ -424,9 +424,6 @@ class Register(object):
         if this is late commit op, store line for later (in self.latelog buffer)
         to write stored lines set op to eg. None and call it again
         """
-        if self.op in self.oplatecommit:
-            self.latelog += line + "\n"
-            return # store for later, just set op to something safe and call this again
         if not self.logf:
             self.logfile = os.path.expanduser(self.logfile)
             if not os.path.exists(self.logfile):
@@ -434,9 +431,6 @@ class Register(object):
             else:
                 self.logf = open(self.logfile, "a")
             self.logf.write("# "+datetime.datetime.now().ctime()+"\n")
-        if self.latelog:
-            self.logf.write(self.latelog)
-            self.latelog = ""
         if line:
             self.logf.write(line+"\n")
 
