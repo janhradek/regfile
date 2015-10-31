@@ -4,7 +4,6 @@ import glob
 import fnmatch
 import threading
 import time
-import sys
 import datetime
 
 from RegfileConfiguration import RegfileConfiguration
@@ -17,8 +16,6 @@ from progressbar import progressbar
 class Register(object):
 
     DEFAULTFILES = ["_.regfiledefaults", ".regfiledefaults"]
-    #DBFILE="~/ViTAL/dbfile.sqlite"
-    #LOGFILE="~/ViTAL/dbfile.log"
     LOGCOMMENT="# "
     LOGADD="+  "
     LOGEXISTS="?  "
@@ -211,7 +208,6 @@ class Register(object):
                 dbfs = self.mm.querydata(dbf)
                 if register:
                     if dbfs is None:
-                        #self.mm.insert(dbf)
                         self.mm.insert(dbf, commit=False)
                         self.log(Register.LOGADD + dbf.logstr())
                         self.printstatus(ii, sff, "New entry " + str(dbf.fileId))
@@ -223,12 +219,10 @@ class Register(object):
                             self.log(Register.LOGEXISTS + dbf.logstr())
                             self.log(Register.LOGEXISTING + dbfs[0].logstr())
                             self.printstatus(ii, sff, "Already registered (data match) as " + str(dbfs[0].fileId))
-                        #fail = fail+1
                         failfiles.append(ff)
                 else:
                     if dbfs is None:
                         self.printstatus(ii, sff, "FAIL")
-                        #fail = fail+1
                         failfiles.append(ff)
                     else:
                         stat = "OK"
@@ -278,7 +272,6 @@ class Register(object):
         for ff in self.files:
             ii = ii + 1
             cdir = os.path.dirname(ff) # directory
-            sff = os.path.basename(ff) # short filename
             if cdir != pdir:
                 print("Directory [{}]".format(cdir))
                 pdir = cdir
@@ -532,7 +525,6 @@ class Register(object):
                 ff = os.path.normpath(os.path.join(cwd, ff))
 
             if (os.path.exists(ff) and os.path.isdir(ff)):
-                matches = []
                 for root, dirnames, filenames in os.walk(ff):
                     for filename in fnmatch.filter(filenames, '*'):
                         fn = os.path.join(root, filename)
@@ -557,7 +549,8 @@ class Register(object):
             return
         elif os.path.exists(self.DEFAULTFILES[1]):
             print("Warning the file " + self.DEFAULTFILES[1] + " exists!")
-        with open(self.DEFAULTFILES[0], "w") as f: pass
+        with open(self.DEFAULTFILES[0], "w"):
+            pass
         print("File " + self.DEFAULTFILES[0] + " created. You can rename it to "+ self.DEFAULTFILES[1] + " if you want.")
 
     def getgroupcomment(self, ff, imp=False):
