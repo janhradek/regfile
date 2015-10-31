@@ -206,7 +206,7 @@ class Register(object):
                         self.printstatus(ii, sff, self.msgpgs(ms,psize,tstart,dupe))
                         time.sleep(0.25)
                     except KeyboardInterrupt:
-                        ms.stopRequested = True
+                        ms.requestStop()
                         self.printstatus(ii, sff, "Interrupted")
                         #fail = fail+1
                         failfiles.append(ff + "    (Interrupted)")
@@ -217,7 +217,7 @@ class Register(object):
                 #if ms.stopRequested:
                 #    print()
                 #    break
-                psize = psize + ms.size
+                psize = psize + ms.fileSize
                 dbf.update(ms)
                 dbfs = self.mm.querydata(dbf)
                 if register:
@@ -399,7 +399,7 @@ class Register(object):
         else:
             for dbf in ll:
                 if self.queryasmysum:
-                    print(MySum(dbf.name, dbf.size, dbf.md1, dbf.md5, dbf.ed2k).toString())
+                    print(str(MySum(dbf.name, dbf.size, dbf.md1, dbf.md5, dbf.ed2k)))
                 elif self.queryverbose:
                     print(dbf.prettystr(True))
                 elif self.queryed2k:
@@ -488,7 +488,7 @@ class Register(object):
         create a progress message from the given info
         """
         pgs = ms.processedSize
-        size = ms.size
+        size = ms.fileSize
         tnow = time.time()
         if pgs == None:
             pgs = 0

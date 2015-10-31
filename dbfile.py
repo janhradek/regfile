@@ -72,7 +72,7 @@ class DBFile(dbbase.Base):
         """
         self.name = ms.fileName
         if ms.state >= 1:
-            self.size = ms.size
+            self.size = ms.fileSize
             self.md1 = ms.md1
         if ms.state == 2:
             self.md5 = ms.md5
@@ -95,6 +95,6 @@ class DBFile(dbbase.Base):
 
     @staticmethod
     def fromMySum(ms, group, comment):
-        return DBFile(ms.filename, group, comment, ms.size, ms.md1, ms.md5, ms.ed2k)
+        return DBFile(ms.filename, group, comment, ms.fileSize, ms.md1, ms.md5, ms.ed2k)
 
 

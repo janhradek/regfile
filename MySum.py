@@ -45,13 +45,13 @@ class MySum(object):
     ED2K_PART_SIZE      = 9728000
 
     # the format string of the string representation of MySum
-    STRING_FORMAT       = "[MYSUM:{fileName}|{size}|{md5}|{md1}|{ed2k}]"
+    STRING_FORMAT       = "[MYSUM:{fileName}|{fileSize}|{md5}|{md1}|{ed2k}]"
 
     # regular expression to parse MySum string format {{{
     STRING_RE           = re.compile(
         r"\[MYSUM:" +
         r"(?P<file_>[^|]+)\|" +
-        r"(?P<size>\d+)\|" +
+        r"(?P<fileSize>\d+)\|" +
         r"(?P<md5>\w{32})\|" +
         r"(?P<md1>\w{32})\|" +
         r"(?P<ed2k>\w{32})\]"
@@ -61,7 +61,7 @@ class MySum(object):
 
 
     # METHODS {{{
-    def __init__(self, file_, size=None, md1=None, md5=None, ed2k=None):
+    def __init__(self, file_, fileSize = None, md1 = None, md5 = None, ed2k = None):
         # DOC {{{
         """Initializes an instance of MySum and stores the parameters. The
         state of the MySum is determined based on the arguments specified.
@@ -71,7 +71,7 @@ class MySum(object):
             file_ -- either the full path of the file or a readable and
                 seekable stream-like object
 
-            size -- (optional) the size of the file, if not specified it will
+            fileSize -- (optional) the fileSize of the file, if not specified it will
                 be determined
 
             md1 -- (optional) the MD5 sum of the first megabyte of the file, if
@@ -92,7 +92,7 @@ class MySum(object):
 
         # store the parameters {{{
         self.file_          = file_
-        self.size           = size
+        self.fileSize           = fileSize
         self.md1            = md1
         self.md5            = md5
         self.ed2k           = ed2k
@@ -100,7 +100,7 @@ class MySum(object):
 
         # initialize the rest of the attributes {{{
         # allows to stop the lenghty upgrade to the STATE_COMPLETE
-        self.stopRequested  = False
+        self._stopRequested  = False
 
         # number of bytes processed during the upgrade to the STATE_COMPLETE
         self.processedSize  = 0
@@ -134,7 +134,7 @@ class MySum(object):
         matchGroups = match.groupdict()
 
         # convert the size in the dict to an integer
-        matchGroups['size'] = int(matchGroups['size'])
+        matchGroups['fileSize'] = int(matchGroups['fileSize'])
 
         # create and return the MySum
         return MySum(**matchGroups)
@@ -183,10 +183,10 @@ class MySum(object):
         # CODE {{{
         # weight each attribute differently (power of 2, like bits) {{{
         weightedAttributes = (
-            (self.size, 1),
-            (self.md1,  2),
-            (self.md5,  4),
-            (self.ed2k, 8),
+            (self.fileSize, 1),
+            (self.md1,      2),
+            (self.md5,      4),
+            (self.ed2k,     8),
         )
         # }}}
 
@@ -300,7 +300,7 @@ class MySum(object):
             stream.seek(0, os.SEEK_END)
 
             # get the size of the stream
-            self.size = stream.tell()
+            self.fileSize = stream.tell()
 
             # rewind the stream
             # NOTE: this might not work depending on the type of the stream
@@ -312,7 +312,7 @@ class MySum(object):
         # otherwise determine the size of the file via system and open it {{{
         else:
             # determine the size of the file
-            self.size = os.stat(self.file_)[6]
+            self.fileSize = os.stat(self.file_)[6]
 
             # open the file for reading (bytes)
             stream = open(self.file_, "rb")
@@ -342,9 +342,16 @@ class MySum(object):
         self.state = MySum.STATE_SIZE_MD1
         # }}}
 
-    def determineMD5AndED2K(self):
+
+    def determineMD5AndED2K(self, progressCallback=None):
         # DOC {{{
         """Determines MD5 and ED2K sums of the entire file.
+
+        Parameters
+
+            progressCallback -- (optional) a function with a single parameter
+                to use to report progress of the determination. The single
+                parameter is the number of processed bytes so far.
         """
         # }}}
 
@@ -397,7 +404,7 @@ class MySum(object):
             # determine MD5 hash of the entire file and MD4 hashes of parts {{{
             while 1:
                 # return immediately if stop has been requested {{{
-                if self.stopRequested:
+                if self._stopRequested:
                     return
                 # }}}
 
@@ -431,7 +438,12 @@ class MySum(object):
                 md5Hasher.update(part)
 
                 # increase the processed size by the part size
-                self.processedSize += MySum.ED2K_PART_SIZE
+                self.processedSize += len(part)
+
+                # report the progress using the call back if it is specified {{{
+                if (progressCallback):
+                    progressCallback(self.processedSize)
+                # }}}
             # }}}
 
             # If the size of the file is exactly N*ED2K_PART_SIZE bytes
@@ -480,6 +492,18 @@ class MySum(object):
         # }}}
 
 
+    def requestStop(self):
+        # DOC {{{
+        """Requests stop of the determination of the MD5 and the ED2K
+        checksums.
+        """
+        # }}}
+
+        # CODE {{{
+        self._stopRequested = True
+        # }}}
+
+
     def __eq__(self, other):
         # DOC {{{
         """Equality operator. All sums, (short) filename and size must match.
@@ -488,29 +512,41 @@ class MySum(object):
 
         # CODE {{{
         return ((self.fileName == other.fileName) and
-                (self.size == other.size) and
+                (self.fileSize == other.fileSize) and
                 (self.md1 == other.md1) and
                 (self.md5 == other.md5) and
                 (self.ed2k == other.ed2k))
         # }}}
 
 
-    def toString(self):
+    def __str__(self):
         # DOC {{{
         """Returns the MySum string format representation of this instance.
         """
         # }}}
 
         # CODE {{{
-        return MySum.formatString(self.fileName, self.size, self.md5, self.md1, self.ed2k)
+        return MySum.format(self.fileName, self.fileSize, self.md5, self.md1, self.ed2k)
         # }}}
 
 
     @staticmethod
-    def formatString(fileName, size, md5, md1, ed2k):
+    def format(fileName, fileSize, md5, md1, ed2k):
         # DOC {{{
         """Returns the MySum string format representation of MySum represented
         by the parameters.
+
+        Parameters
+
+            fileName -- the name of the file
+
+            fileSize --  the fileSize of the file
+
+            md1 --  the MD5 sum of the first megabyte of the file
+
+            md5 --  the MD5 sum of the entire file
+
+            ed2k --  the ED2K sum of the entire file
         """
         # }}}
 
@@ -521,6 +557,7 @@ class MySum(object):
 
     # }}}
 # }}}
+
 
 if (__name__ == "__main__"):
     import random
@@ -545,7 +582,7 @@ if (__name__ == "__main__"):
         print("Testing data size {:12} ...     ".format(test[0]), end='')
         mm = MySum(io.BytesIO(b[0:test[0]]))
         mm.upgrade(MySum.STATE_COMPLETE)
-        mm2 = MySum.fromString(mm.toString())
+        mm2 = MySum.fromString(str(mm))
         r = [mm.size == test[0], mm.md5 == test[1], mm.md1 == test[2], mm.ed2k == test[3]]
         rt = (rt and r[0] and r[1] and r[2] and r[3])
         print("SIZE {}  ".format("OK" if r[0] else "FAIL" ), end='')
