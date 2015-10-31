@@ -65,11 +65,11 @@ class DBModel(object):
         properties set to None will be ignored (and not part of the search)
         only filename, group and comment can be queried
         """
-        q = self.session.query(DBFile).order_by(DBFile.idno)
-        if dbf.idno != None:
-            q = q.filter(DBFile.idno.ilike(dbf.idno))
-        if dbf.name != None and dbf.name != "":
-            q = q.filter(DBFile.name.ilike(self.strtoqstr(dbf.name)))
+        q = self.session.query(DBFile).order_by(DBFile.fileId)
+        if dbf.fileId != None:
+            q = q.filter(DBFile.fileId.ilike(dbf.fileId))
+        if dbf.fileName != None and dbf.fileName != "":
+            q = q.filter(DBFile.fileName.ilike(self.strtoqstr(dbf.fileName)))
         if dbf.group != None and dbf.group != "":
             q = q.filter(DBFile.group.ilike(self.strtoqstr(dbf.group)))
         if dbf.comment != None and dbf.comment != "":
@@ -84,11 +84,11 @@ class DBModel(object):
         """
         return all the records (ordered by id?) which matches queried dbf
 
-        query is done only on data properties: size, md1, md5, ed2k
-        if quick is True only size and md1 is queried
+        query is done only on data properties: fileSize, md1, md5, ed2k
+        if quick is True only fileSize and md1 is queried
         """
-        q = self.session.query(DBFile).order_by(DBFile.idno)
-        q = q.filter(DBFile.size == dbf.size)
+        q = self.session.query(DBFile).order_by(DBFile.fileId)
+        q = q.filter(DBFile.fileSize == dbf.fileSize)
         q = q.filter(DBFile.md1.ilike(dbf.md1))
         if not quick:
             q = q.filter(DBFile.md5.ilike(dbf.md5))
@@ -111,10 +111,10 @@ class DBModel(object):
 
     def __contains__(self, dbf):
         """
-        return true if the database contains the specified dbfile (size, md1, md5, ed2k is checked)
+        return true if the database contains the specified dbfile (fileSize, md1, md5, ed2k is checked)
         """
         q = self.session.query(DBFile)
-        q = q.filter(DBFile.size == dbf.size)
+        q = q.filter(DBFile.fileSize == dbf.fileSize)
         q = q.filter(DBFile.md1 == dbf.md1)
         q = q.filter(DBFile.md5 == dbf.md5)
         q = q.filter(DBFile.ed2k == dbf.ed2k)
@@ -134,20 +134,20 @@ class DBModel(object):
                 continue
             ins = True
             self.session.add(dbf)
-            self.session.merge(dbf) # this magic will refresh the idno
+            self.session.merge(dbf) # this magic will refresh the fileId
 
         if ins and commit and not self.dryrun:
             self.session.commit()
 
     def update(self, dbf, setall=False):
         """
-        update the entry given by dbf.idno with the info from that dbf
+        update the entry given by dbf.fileId with the info from that dbf
 
         only filename, group and comment can be changed
         returns True if the update was successfull
         returns False if the record doesnt exists or nothing was set
         """
-        q = self.session.query(DBFile).filter(DBFile.idno == dbf.idno)
+        q = self.session.query(DBFile).filter(DBFile.fileId == dbf.fileId)
         dbft = None
         try:
             dbft = q.one()
@@ -155,8 +155,8 @@ class DBModel(object):
             return None
 
         com = False
-        if dbf.name or setall: #!= None:
-            dbft.name = dbf.name if dbf.name != "" else None
+        if dbf.fileName or setall: #!= None:
+            dbft.fileName = dbf.fileName if dbf.fileName != "" else None
             com = True
         if dbf.group or setall: #!= None:
             dbft.group = dbf.group if dbf.group != "" else None

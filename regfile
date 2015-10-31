@@ -35,7 +35,7 @@ if __name__ == "__main__":
     gg.add_argument("-cp", help="confirm only commits with problems (for -R -I)", dest="commit", action="store_const", const="problem")
     pp.add_argument("-d", help="don't read the defaults", dest="defaults", action="store_false")
     pp.add_argument("-g", help="group name (for -R -S -Q)", dest="group")
-    pp.add_argument("-i", help="id (for -S -Q)", dest="idno", metavar="ID")
+    pp.add_argument("-i", help="id (for -S -Q)", dest="fileId", metavar="ID")
     gg = pp.add_mutually_exclusive_group(required=False)
     gg.add_argument("-qm", help="query prints mysum format (for -Q)", dest="queryasmysum", action="store_true")
     gg.add_argument("-qa", help="query prints everything (for -Q)", dest="queryverbose", action="store_true")

@@ -38,7 +38,7 @@ class Register(object):
         # }}}
 
         # arguments
-        self.idno = args.idno
+        self.fileId = args.fileId
         self.group = args.group #if args.group != None else "" # set doesnt like it
         self.comment = args.comment #if args.comment != None else "" # set doesnt like it
         self.files = args.filenames
@@ -224,15 +224,15 @@ class Register(object):
                         #self.mm.insert(dbf)
                         self.mm.insert(dbf, commit=False)
                         self.log(Register.LOGADD + dbf.logstr())
-                        self.printstatus(ii, sff, "New entry " + str(dbf.idno))
+                        self.printstatus(ii, sff, "New entry " + str(dbf.fileId))
                     else:
                         if dbf.match(dbfs[0], nametoo=True):
                             self.log(Register.LOGEXISTS + dbfs[0].logstr())
-                            self.printstatus(ii, sff, "Already registered (full match) as " + str(dbfs[0].idno))
+                            self.printstatus(ii, sff, "Already registered (full match) as " + str(dbfs[0].fileId))
                         else:
                             self.log(Register.LOGEXISTS + dbf.logstr())
                             self.log(Register.LOGEXISTING + dbfs[0].logstr())
-                            self.printstatus(ii, sff, "Already registered (data match) as " + str(dbfs[0].idno))
+                            self.printstatus(ii, sff, "Already registered (data match) as " + str(dbfs[0].fileId))
                         #fail = fail+1
                         failfiles.append(ff)
                 else:
@@ -242,9 +242,9 @@ class Register(object):
                         failfiles.append(ff)
                     else:
                         stat = "OK"
-                        if dbfs[0].name.lower() != dbf.name.lower():
-                            stat = "(as " + dbfs[0].name + ") OK"
-                        stat = "id:" + str(dbfs[0].idno) + " " + stat
+                        if dbfs[0].fileName.lower() != dbf.fileName.lower():
+                            stat = "(as " + dbfs[0].fileName + ") OK"
+                        stat = "id:" + str(dbfs[0].fileId) + " " + stat
                         self.printstatus(ii, sff, stat)
                 print()
             except KeyboardInterrupt:
@@ -321,11 +321,11 @@ class Register(object):
                         dbfs = self.mm.querydata(dbf)
                         if dbf.match(dbfs[0], nametoo=True):
                             self.log(Register.LOGEXISTS + dbfs[0].logstr())
-                            self.printstatus(ii, ff, "Already registered (full match) as {} L{}".format(dbfs[0].idno, ll))
+                            self.printstatus(ii, ff, "Already registered (full match) as {} L{}".format(dbfs[0].fileId, ll))
                         else:
                             self.log(Register.LOGEXISTS + dbf.logstr())
                             self.log(Register.LOGEXISTING + dbfs[0].logstr())
-                            self.printstatus(ii, ff, "Already registered (data match) as {} L{}".format(dbfs[0].idno, ll))
+                            self.printstatus(ii, ff, "Already registered (data match) as {} L{}".format(dbfs[0].fileId, ll))
                         print()
                         continue
                     jj = jj + 1
@@ -369,7 +369,7 @@ class Register(object):
             elif len(self.files) == 1:
                 ff = self.files[0]
 
-        dbf = DBFile(idno=self.idno, name=ff, group=self.group, comment=self.comment)
+        dbf = DBFile(fileId=self.fileId, fileName=ff, group=self.group, comment=self.comment)
         self.log(Register.LOGUPDATE + dbf.logstr())
         dbf = self.mm.update(dbf)
         if not dbf:
@@ -391,14 +391,14 @@ class Register(object):
             elif len(self.files) == 1:
                 ff = self.files[0]
 
-        dbf = DBFile(idno=self.idno, name=ff, group=self.group, comment=self.comment)
+        dbf = DBFile(fileId=self.fileId, fileName=ff, group=self.group, comment=self.comment)
         ll = self.mm.queryinfo(dbf)
         if ll == None:
             print("No record matches the query!")
         else:
             for dbf in ll:
                 if self.queryasmysum:
-                    print(str(MySum(dbf.name, dbf.size, dbf.md1, dbf.md5, dbf.ed2k)))
+                    print(str(MySum(dbf.fileName, dbf.fileSize, dbf.md1, dbf.md5, dbf.ed2k)))
                 elif self.queryverbose:
                     print(dbf.prettystr(True))
                 elif self.queryed2k:
