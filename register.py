@@ -8,8 +8,8 @@ import sys
 import datetime
 
 from RegfileConfiguration import RegfileConfiguration
-import dbmodel
-import dbfile
+from db.DBModel import DBModel
+from db.DBFile import DBFile
 from MySum import MySum
 from PathTemplates import PathTemplates
 from progressbar import progressbar
@@ -93,8 +93,7 @@ class Register(object):
         self.op = dd[args.op][0]
 
         if self.op != self.resetfromlog:
-            #self.mm = dbmodel.Model(Register.DBFILE, self.dryrun)
-            self.mm = dbmodel.Model(self.dbfile, self.dryrun)
+            self.mm = DBModel(self.dbfile, self.dryrun)
 
         self.processfiles(thorough=dd[args.op][1])
 
@@ -173,7 +172,7 @@ class Register(object):
                     print("Directory [{}]".format(cdir))
                     pdir = cdir
 
-                dbf = dbfile.DBFile(ff)
+                dbf = DBFile(ff)
                 if register: # group and comment
                     gr, com = self.getgroupcomment(ff)
                     if gr != pgr or com != pcom:
@@ -316,7 +315,7 @@ class Register(object):
                         break
                     self.printstatus(ii, ff, ms.filename + " L" + str(ll))
 
-                    dbf = dbfile.DBFile.fromMySum(ms, gr, com)
+                    dbf = DBFile.fromMySum(ms, gr, com)
                     if dbf in self.mm:
                         warn = warn + 1
                         dbfs = self.mm.querydata(dbf)
@@ -370,7 +369,7 @@ class Register(object):
             elif len(self.files) == 1:
                 ff = self.files[0]
 
-        dbf = dbfile.DBFile(idno=self.idno, name=ff, group=self.group, comment=self.comment)
+        dbf = DBFile(idno=self.idno, name=ff, group=self.group, comment=self.comment)
         self.log(Register.LOGUPDATE + dbf.logstr())
         dbf = self.mm.update(dbf)
         if not dbf:
@@ -392,7 +391,7 @@ class Register(object):
             elif len(self.files) == 1:
                 ff = self.files[0]
 
-        dbf = dbfile.DBFile(idno=self.idno, name=ff, group=self.group, comment=self.comment)
+        dbf = DBFile(idno=self.idno, name=ff, group=self.group, comment=self.comment)
         ll = self.mm.queryinfo(dbf)
         if ll == None:
             print("No record matches the query!")
@@ -426,15 +425,14 @@ class Register(object):
             os.rename(self.dbfile, bak)
         # read new one
         print("This might take a while depending on the log size. Please wait ...")
-        self.mm = dbmodel.Model(self.dbfile, self.dryrun)
+        self.mm = DBModel(self.dbfile, self.dryrun)
         with open(self.logfile, "r") as self.logf:
             for ll in self.logf:
                 if ll.startswith(Register.LOGADD):
-                    dbf = dbfile.DBFile.fromlogstr(ll[len(Register.LOGADD):])
+                    dbf = DBFile.fromlogstr(ll[len(Register.LOGADD):])
                     self.mm.insert(dbf, commit=False)
                 elif ll.startswith(Register.LOGUPDATED):
-                    #dbf = dbfile.DBFile.fromlogstr(ll[len(Register.LOGUPDATE):])
-                    dbf = dbfile.DBFile.fromlogstr(ll[len(Register.LOGUPDATED):])
+                    dbf = DBFile.fromlogstr(ll[len(Register.LOGUPDATED):])
                     self.mm.commit()
                     self.mm.update(dbf, setall=True)
         self.mm.commit()

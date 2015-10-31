@@ -3,10 +3,10 @@ import sqlalchemy
 import sqlalchemy.orm
 import sqlalchemy.sql.expression
 
-import dbbase
-import dbfile
+from .DBBase import DBBase
+from .DBFile import DBFile
 
-class Model(object):
+class DBModel(object):
     def __init__(self, dbfile, dryrun):
         '''
         (constructor) initialize the mode
@@ -33,7 +33,7 @@ class Model(object):
         self.SessionMaker = sqlalchemy.orm.sessionmaker(bind=self.engine)
 
         if not os.path.exists(dbfile):
-            dbbase.Base.metadata.create_all(self.engine)
+            DBBase.metadata.create_all(self.engine)
             self.insertExampleData()
 
         self.session = self.SessionMaker()
@@ -65,15 +65,15 @@ class Model(object):
         properties set to None will be ignored (and not part of the search)
         only filename, group and comment can be queried
         """
-        q = self.session.query(dbfile.DBFile).order_by(dbfile.DBFile.idno)
+        q = self.session.query(DBFile).order_by(DBFile.idno)
         if dbf.idno != None:
-            q = q.filter(dbfile.DBFile.idno.ilike(dbf.idno))
+            q = q.filter(DBFile.idno.ilike(dbf.idno))
         if dbf.name != None and dbf.name != "":
-            q = q.filter(dbfile.DBFile.name.ilike(self.strtoqstr(dbf.name)))
+            q = q.filter(DBFile.name.ilike(self.strtoqstr(dbf.name)))
         if dbf.group != None and dbf.group != "":
-            q = q.filter(dbfile.DBFile.group.ilike(self.strtoqstr(dbf.group)))
+            q = q.filter(DBFile.group.ilike(self.strtoqstr(dbf.group)))
         if dbf.comment != None and dbf.comment != "":
-            q = q.filter(dbfile.DBFile.comment.ilike(self.strtoqstr(dbf.comment)))
+            q = q.filter(DBFile.comment.ilike(self.strtoqstr(dbf.comment)))
 
         res = list(q.all())
         if len(res) == 0:
@@ -87,12 +87,12 @@ class Model(object):
         query is done only on data properties: size, md1, md5, ed2k
         if quick is True only size and md1 is queried
         """
-        q = self.session.query(dbfile.DBFile).order_by(dbfile.DBFile.idno)
-        q = q.filter(dbfile.DBFile.size == dbf.size)
-        q = q.filter(dbfile.DBFile.md1.ilike(dbf.md1))
+        q = self.session.query(DBFile).order_by(DBFile.idno)
+        q = q.filter(DBFile.size == dbf.size)
+        q = q.filter(DBFile.md1.ilike(dbf.md1))
         if not quick:
-            q = q.filter(dbfile.DBFile.md5.ilike(dbf.md5))
-            q = q.filter(dbfile.DBFile.ed2k.ilike(dbf.ed2k))
+            q = q.filter(DBFile.md5.ilike(dbf.md5))
+            q = q.filter(DBFile.ed2k.ilike(dbf.ed2k))
 
         res = list(q.all())
         if len(res) == 0:
@@ -113,11 +113,11 @@ class Model(object):
         """
         return true if the database contains the specified dbfile (size, md1, md5, ed2k is checked)
         """
-        q = self.session.query(dbfile.DBFile)
-        q = q.filter(dbfile.DBFile.size == dbf.size)
-        q = q.filter(dbfile.DBFile.md1 == dbf.md1)
-        q = q.filter(dbfile.DBFile.md5 == dbf.md5)
-        q = q.filter(dbfile.DBFile.ed2k == dbf.ed2k)
+        q = self.session.query(DBFile)
+        q = q.filter(DBFile.size == dbf.size)
+        q = q.filter(DBFile.md1 == dbf.md1)
+        q = q.filter(DBFile.md5 == dbf.md5)
+        q = q.filter(DBFile.ed2k == dbf.ed2k)
         return (q.count() != 0)
 
     def insert(self, dbfs, commit=True):
@@ -147,7 +147,7 @@ class Model(object):
         returns True if the update was successfull
         returns False if the record doesnt exists or nothing was set
         """
-        q = self.session.query(dbfile.DBFile).filter(dbfile.DBFile.idno == dbf.idno)
+        q = self.session.query(DBFile).filter(DBFile.idno == dbf.idno)
         dbft = None
         try:
             dbft = q.one()

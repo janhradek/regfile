@@ -1,9 +1,9 @@
 import sqlalchemy
 import sqlalchemy.orm
 
-import dbbase
+from .DBBase import DBBase
 
-class DBFile(dbbase.Base):
+class DBFile(DBBase):
     __tablename__ = "file"
 
     idno = sqlalchemy.Column(sqlalchemy.Integer, primary_key = True)
