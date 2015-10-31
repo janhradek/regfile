@@ -92,7 +92,7 @@ class Register(object):
         except:
             pass
 
-    def go(self, once=True):
+    def go(self):
         """
         just run the designed doperation
         """
@@ -100,11 +100,10 @@ class Register(object):
             if self.op:
                 self.op()
         finally:
-            if once:
-                if self.logf:
-                    self.logf.close()
-                if self.mm:
-                    self.mm.close()
+            if self.logf:
+                self.logf.close()
+            if self.mm:
+                self.mm.close()
 
     def determineconfirm(self, args):
         """arguments take precedence over configuration"""
