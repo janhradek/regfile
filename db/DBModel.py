@@ -7,7 +7,7 @@ from .DBBase import DBBase
 from .DBFile import DBFile
 
 class DBModel(object):
-    def __init__(self, dbfile, dryrun):
+    def __init__(self, dbfile):
         '''
         (constructor) initialize the mode
         dbfile is optional
@@ -15,7 +15,6 @@ class DBModel(object):
         self.SessionMaker = None
         self.session = None
         self.engine = None
-        self.dryrun = dryrun
 
         self.init(dbfile)
 
@@ -55,7 +54,7 @@ class DBModel(object):
         self.session = None
 
     def commit(self):
-        if self.session != None and not self.dryrun:
+        if self.session != None:
             self.session.commit()
 
     def queryinfo(self, dbf):
@@ -136,7 +135,7 @@ class DBModel(object):
             self.session.add(dbf)
             self.session.merge(dbf) # this magic will refresh the fileId
 
-        if ins and commit and not self.dryrun:
+        if ins and commit:
             self.session.commit()
 
     def update(self, dbf, setall=False):
@@ -165,7 +164,7 @@ class DBModel(object):
             dbft.comment = dbf.comment if dbf.comment != "" else None
             com = True
 
-        if com and not self.dryrun:
+        if com:
             self.session.add(dbft)
             self.session.commit()
         else:

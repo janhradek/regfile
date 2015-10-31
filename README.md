@@ -31,7 +31,6 @@ Features
     * -qm - query outputs MYSUM format
     * -qa - query outputs everything (query alone only prints id, name, size, group and comment)
     * -qe - query outputs ED2K links
-    * -0 - dry run - dont commit anything
 * the database and the logfile location is stored in a configuration file ~/.regfile
     * there are also some other settings
     * to create a default config just run the program

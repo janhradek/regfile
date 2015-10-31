@@ -47,11 +47,7 @@ class Register(object):
         self.queryed2k = args.queryed2k
         self.auto= args.auto
         self.defaults = args.defaults
-        self.dryrun = args.dryrun
         self.determineconfirm(args)
-        #self.confirmauto = args.confirmauto and not args.dryrun
-        #self.confirm = args.confirm and not args.dryrun
-        #self.confirmproblem = args.confirmproblem and not args.dryrun
 
         # defaults
         self.mm = None # database model
@@ -93,7 +89,7 @@ class Register(object):
         self.op = dd[args.op][0]
 
         if self.op != self.resetfromlog:
-            self.mm = DBModel(self.dbfile, self.dryrun)
+            self.mm = DBModel(self.dbfile)
 
         self.processfiles(thorough=dd[args.op][1])
 
@@ -108,8 +104,6 @@ class Register(object):
         just run the designed doperation
         """
         try:
-            if self.dryrun:
-                print("!!   D R Y   R U N   !!   D R Y   R U N   !!   D R Y   R U N   !!")
             if self.op:
                 self.op()
         finally:
@@ -121,14 +115,10 @@ class Register(object):
                     self.logf.close()
                 if self.mm:
                     self.mm.close()
-            if self.dryrun:
-                print("!!   D R Y   R U N   !!   D R Y   R U N   !!   D R Y   R U N   !!")
 
     def determineconfirm(self, args):
-        """arguments take precedence over configuration, dry run disables any confirmation"""
+        """arguments take precedence over configuration"""
         self.confirm = self.confirmproblem = False
-        if args.dryrun:
-            return
         if args.commit: # specified on command line
             cc = args.commit
         else: # get value from config instead
@@ -425,7 +415,7 @@ class Register(object):
             os.rename(self.dbfile, bak)
         # read new one
         print("This might take a while depending on the log size. Please wait ...")
-        self.mm = DBModel(self.dbfile, self.dryrun)
+        self.mm = DBModel(self.dbfile)
         with open(self.logfile, "r") as self.logf:
             for ll in self.logf:
                 if ll.startswith(Register.LOGADD):
@@ -444,11 +434,9 @@ class Register(object):
         if this is late commit op, store line for later (in self.latelog buffer)
         to write stored lines set op to eg. None and call it again
         """
-        if self.op in self.oplatecommit and not self.dryrun:
+        if self.op in self.oplatecommit:
             self.latelog += line + "\n"
             return # store for later, just set op to something safe and call this again
-        if self.dryrun and line:
-            line = "#DRYRUN " + line
         if not self.logf:
             self.logfile = os.path.expanduser(self.logfile)
             if not os.path.exists(self.logfile):

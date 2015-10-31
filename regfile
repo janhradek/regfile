@@ -40,7 +40,6 @@ if __name__ == "__main__":
     gg.add_argument("-qm", help="query prints mysum format (for -Q)", dest="queryasmysum", action="store_true")
     gg.add_argument("-qa", help="query prints everything (for -Q)", dest="queryverbose", action="store_true")
     gg.add_argument("-qe", help="query prints ed2k links (for -Q)", dest="queryed2k", action="store_true")
-    pp.add_argument("-0", help="dry run, dont commit anything (for -R -S -I)", dest="dryrun", action="store_true")
     #pp.add_argument("-f", help="input filename(s) to register, check or import", dest="filenames", nargs='+')
     pp.add_argument("filenames", help="input filename(s) (for -R -C -S -I -Q)", nargs='*', default=None)
     args = pp.parse_args()
