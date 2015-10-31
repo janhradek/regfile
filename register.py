@@ -155,7 +155,7 @@ class Register(object):
         dbFilesToStore = []
         for ff in self.files:
             ii = ii + 1
-            dupe = False
+            fileMightBeRegistered = False
             cdir = os.path.dirname(ff) # directory
             sff = os.path.basename(ff) # short filename
             try:
@@ -178,7 +178,7 @@ class Register(object):
                 dbfs = self.mm.querydata(dbf, quick=True)
                 if register:
                     if not dbfs is None:
-                        dupe = True
+                        fileMightBeRegistered = True
                 else: # check
                     if dbfs is None:
                         self.printstatus(ii, sff, "FAIL")
@@ -189,7 +189,7 @@ class Register(object):
                 tt.start()
                 while tt.is_alive():
                     try:
-                        self.printstatus(ii, sff, self.msgpgs(ms,psize,tstart,dupe))
+                        self.printstatus(ii, sff, self.msgpgs(ms,psize,tstart,fileMightBeRegistered))
                         time.sleep(0.25)
                     except KeyboardInterrupt:
                         ms.requestStop()
@@ -454,7 +454,7 @@ class Register(object):
         ff = ff.ljust(lff)
         print("\r{} {}   {}".format(stat, ff, msg), end="")
 
-    def msgpgs(self, ms, psize, tstart, dupe=False):
+    def msgpgs(self, ms, psize, tstart, fileMightBeRegistered=False):
         """
         create a progress message from the given info
         """
@@ -482,7 +482,7 @@ class Register(object):
                 eta = " {:02d}:{:02d}".format(int(eta/60), eta % 60)
             else:
                 eta = " 00:00"
-        return "{}{} {:3d}MB/s{}".format("* " if dupe else "", progressbar(percent,size=21), speed, eta)
+        return "{}{} {:3d}MB/s{}".format("* " if fileMightBeRegistered else "", progressbar(percent,size=21), speed, eta)
 
     def processfiles(self, thorough=True):
         """
