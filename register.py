@@ -1,16 +1,16 @@
+import datetime
+import fnmatch
+import glob
 import os
 import os.path
-import glob
-import fnmatch
 import threading
 import time
-import datetime
 
-from RegfileConfiguration import RegfileConfiguration
-from db.DBModel import DBModel
-from db.DBFile import DBFile
 from MySum import MySum
 from PathTemplates import PathTemplates
+from RegfileConfiguration import RegfileConfiguration
+from db.DBFile import DBFile
+from db.DBModel import DBModel
 from progressbar import progressbar
 
 class Register(object):
