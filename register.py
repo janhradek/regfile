@@ -99,7 +99,6 @@ class Register(object):
 
         self.processfiles(thorough=dd[args.op][1])
 
-        #if sys.platform == "linux" or sys.platform == "linux2":
         try:
             self.cols = int(os.popen('stty size', 'r').read().split()[1])
         except:
@@ -152,7 +151,6 @@ class Register(object):
         pgr, pcom, pdir, psize = "", "", "", 0 # previous group, comment, directory and size
         tstart = time.time()
         ii = 0
-        #fail = 0
         failfiles = []
         dbFilesToStore = []
         for ff in self.files:
@@ -180,17 +178,13 @@ class Register(object):
                 dbfs = self.mm.querydata(dbf, quick=True)
                 if register:
                     if not dbfs is None:
-                        #self.printstatus(ii, sff, "Already registered?")
                         dupe = True
-                        #print("Warning! The file " + sff + " might already be registered (quick check).")
                 else: # check
                     if dbfs is None:
                         self.printstatus(ii, sff, "FAIL")
-                        #fail = fail+1
                         failfiles.append(ff)
                         print() # newline
                         continue
-                #ms.upgrade(2)
                 tt = threading.Thread(target=ms.upgrade,args=[2])
                 tt.start()
                 while tt.is_alive():
@@ -200,15 +194,10 @@ class Register(object):
                     except KeyboardInterrupt:
                         ms.requestStop()
                         self.printstatus(ii, sff, "Interrupted")
-                        #fail = fail+1
                         failfiles.append(ff + "    (Interrupted)")
                         tt.join()
-                        #break
                         raise
                 tt.join()
-                #if ms.stopRequested:
-                #    print()
-                #    break
                 psize = psize + ms.fileSize
                 dbf.update(ms)
                 dbfs = self.mm.querydata(dbf)
@@ -404,8 +393,6 @@ class Register(object):
         """
         drop the db and reinsert (and update) all the entries from log to the empty db
         """
-        #Register.LOGFILE = os.path.expanduser(Register.LOGFILE)
-        #Register.DBFILE = os.path.expanduser(Register.DBFILE)
         if not os.path.exists(self.logfile):
             print("The logfile " + self.logfile + " doesn't exist!")
             return
@@ -495,7 +482,6 @@ class Register(object):
                 eta = " {:02d}:{:02d}".format(int(eta/60), eta % 60)
             else:
                 eta = " 00:00"
-        #return "{}{:3d}% {:3d}MB/s{}".format("*" if dupe else "", percent, speed, eta)
         return "{}{} {:3d}MB/s{}".format("* " if dupe else "", progressbar(percent,size=21), speed, eta)
 
     def processfiles(self, thorough=True):
@@ -541,7 +527,6 @@ class Register(object):
                     rf.append(fn)
         self.totalsize = ts
         self.files = rf
-        #print(rf)
 
     def makedefaults(self):
         """
@@ -573,7 +558,6 @@ class Register(object):
         """
         gr = self.group # if self.group != None else "" # bad idea - the values are compared later
         com = self.comment # if self.comment != None else ""
-        #if gr != "" and gr != None and com != "" and com != None:
         if gr and com:
             return gr, com
 
@@ -607,7 +591,6 @@ class Register(object):
                 if gr == self.group and com == self.comment:
                     self.defaultcache[dirname] = None
                 else:
-                    #print("Using defaults: group='{}' comment='{}'".format(dgr, dcom))
                     self.defaultcache[dirname] = (gr, com)
 
         if self.auto:

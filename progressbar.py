@@ -45,7 +45,6 @@ if __name__ == "__main__":
     print(progressbar(50,size=15))
     print()
     for i in range(0,101):
-        #print(progressbar(i,size=13, empty=" "))
         print("\r"+progressbar(i,size=22,markfmt=""), end="")
         import time
         time.sleep(0.05)

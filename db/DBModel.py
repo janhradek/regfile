@@ -24,8 +24,6 @@ class DBModel(object):
         Initialize the Model
         '''
         self.close()
-        #if dbfile==None:
-        # default location for the lst (sqlite) ~/ViTAL/dbfile.sqlite
         dbfile = os.path.expanduser(dbfile)
         self.engine = sqlalchemy.create_engine('sqlite:///' + dbfile, echo = echoSQLCommands)
         self.SessionMaker = sqlalchemy.orm.sessionmaker(bind=self.engine)
@@ -153,13 +151,13 @@ class DBModel(object):
             return None
 
         com = False
-        if dbf.fileName or setall: #!= None:
+        if dbf.fileName or setall:
             dbft.fileName = dbf.fileName if dbf.fileName != "" else None
             com = True
-        if dbf.group or setall: #!= None:
+        if dbf.group or setall:
             dbft.group = dbf.group if dbf.group != "" else None
             com = True
-        if dbf.comment or setall: #!= None:
+        if dbf.comment or setall:
             dbft.comment = dbf.comment if dbf.comment != "" else None
             com = True
 
