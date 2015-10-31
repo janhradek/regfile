@@ -19,7 +19,7 @@ class DBModel(object):
         self.init(dbfile)
 
 
-    def init(self,dbfile):
+    def init(self,dbfile, echoSQLCommands = False):
         '''
         Initialize the Model
         '''
@@ -27,7 +27,7 @@ class DBModel(object):
         #if dbfile==None:
         # default location for the lst (sqlite) ~/ViTAL/dbfile.sqlite
         dbfile = os.path.expanduser(dbfile)
-        self.engine = sqlalchemy.create_engine('sqlite:///' + dbfile)#, echo=True)
+        self.engine = sqlalchemy.create_engine('sqlite:///' + dbfile, echo = echoSQLCommands)
         self.SessionMaker = sqlalchemy.orm.sessionmaker(bind=self.engine)
 
         if not os.path.exists(dbfile):
