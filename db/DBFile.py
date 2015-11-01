@@ -27,20 +27,6 @@ class DBFile(DBBase):
         self.fileName, self.group, self.comment, self.fileSize, self.md1, self.md5, self.ed2k, self.fileId = \
             fileName, group, comment, fileSize, md1, md5, ed2k, fileId
 
-    def match(self, other, nametoo=False):
-        rr = False
-        if (not isinstance(self.fileSize, int)):
-            raise TypeError("dbfile.fileSize must be an int! (self)")
-        if (not isinstance(other.fileSize, int)):
-            raise TypeError("dbfile.fileSize must be an int! (other)")
-
-        if self.fileSize == other.fileSize and self.md1 == other.md1 and self.md5 == other.md5 and self.ed2k == other.ed2k:
-            rr = True
-        if nametoo and self.fileName != other.fileName:
-            rr = False
-        return rr
-
-
     @staticmethod
     def fromMySum(ms, group, comment):
         return DBFile(ms.fileName, group, comment, ms.fileSize, ms.md1, ms.md5, ms.ed2k)

@@ -197,32 +197,43 @@ class Register(object):
                         ms.requestStop()
                         tt.join()
                         raise
+
                 tt.join()
+
                 psize = psize + ms.fileSize
 
                 dbf.md5     = ms.md5
                 dbf.ed2k    = ms.ed2k
-                dbfs = self.mm.querydata(dbf)
+
+                matchingDBFile = self._determineMatchingDBFile(dbf)
+
+                fullMatch = (
+                        (matchingDBFile is not None) and
+                        (dbf.fileName == matchingDBFile.fileName) and
+                        (dbf.group == matchingDBFile.group) and
+                        (dbf.comment == matchingDBFile.comment)
+                )
+
                 if register:
-                    if dbfs is None:
+                    if (matchingDBFile is None):
                         self.mm.insert(dbf, commit=False)
                         self.printstatus(ii, sff, "New entry " + str(dbf.fileId))
                         dbFilesToStore.append(dbf)
                     else:
-                        if dbf.match(dbfs[0], nametoo=True):
-                            self.printstatus(ii, sff, "Already registered (full match) as " + str(dbfs[0].fileId))
+                        if (fullMatch):
+                            self.printstatus(ii, sff, "Already registered (full match) as " + str(matchingDBFile.fileId))
                         else:
-                            self.printstatus(ii, sff, "Already registered (data match) as " + str(dbfs[0].fileId))
+                            self.printstatus(ii, sff, "Already registered (data match) as " + str(matchingDBFile.fileId))
                         failfiles.append(ff)
                 else:
-                    if dbfs is None:
+                    if (matchingDBFile is None):
                         self.printstatus(ii, sff, "FAIL")
                         failfiles.append(ff)
                     else:
                         stat = "OK"
-                        if dbfs[0].fileName.lower() != dbf.fileName.lower():
-                            stat = "(as " + dbfs[0].fileName + ") OK"
-                        stat = "id:" + str(dbfs[0].fileId) + " " + stat
+                        if (not fullMatch):
+                            stat = "(as " + matchingDBFile.fileName + ") OK"
+                        stat = "id:" + str(matchingDBFile.fileId) + " " + stat
                         self.printstatus(ii, sff, stat)
                 print()
             except KeyboardInterrupt:
@@ -271,6 +282,28 @@ class Register(object):
          # }}}
 
 
+    def _determineMatchingDBFile(self, dbf):
+        # DOC {{{
+        """Returns the DBFile() that matches the size, the MD5 sum of the first
+        megabyte, the MD5 sum of the entire file and the ED2K sum of the
+        specified DBFile() and is already registered in the register.
+
+        Parameters
+
+            dbf -- an instance of DBFile()
+        """
+        # }}}
+
+        # CODE {{{
+        dbfs = self.mm.querydata(dbf)
+
+        if ((dbfs is None) or (len(dbfs) == 0)):
+            return None
+        else:
+            return dbfs[0]
+        # }}}
+
+
     def batchimport(self):
         """
         store all data stored in the provided files (usually named like sumlog.txt)
@@ -316,13 +349,21 @@ class Register(object):
                     self.printstatus(ii, ff, ms.fileName + " L" + str(ll))
 
                     dbf = DBFile.fromMySum(ms, gr, com)
-                    if dbf in self.mm:
+
+                    matchingDBFile = self._determineMatchingDBFile(dbf)
+
+                    fullMatch = ((matchingDBFile is not None) and
+                                 (dbf.fileName == matchingDBFile.fileName) and
+                                 (dbf.group == matchingDBFile.group) and
+                                 (dbf.comment == matchingDBFile.comment))
+
+                    if (matchingDBFile):
                         warn = warn + 1
-                        dbfs = self.mm.querydata(dbf)
-                        if dbf.match(dbfs[0], nametoo=True):
-                            self.printstatus(ii, ff, "Already registered (full match) as {} L{}".format(dbfs[0].fileId, ll))
+
+                        if (fullMatch):
+                            self.printstatus(ii, ff, "Already registered (full match) as {} L{}".format(matchingDBFile.fileId, ll))
                         else:
-                            self.printstatus(ii, ff, "Already registered (data match) as {} L{}".format(dbfs[0].fileId, ll))
+                            self.printstatus(ii, ff, "Already registered (data match) as {} L{}".format(matchingDBFile.fileId, ll))
                         print()
                         continue
                     jj = jj + 1
