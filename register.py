@@ -41,7 +41,7 @@ class Register(object):
         """
         # setup configuration {{{
         self.configuration  = RegfileConfiguration()
-        self.dbfile         = self.configuration[RegfileConfiguration.DB]
+        self.dbFilePath     = self.configuration[RegfileConfiguration.DB]
         self.logfile        = self.configuration[RegfileConfiguration.LOG]
         # }}}
 
@@ -73,7 +73,7 @@ class Register(object):
                         That also means that a default location for the database '{1}' is being
                         used. Review and change the configuration if necessary! The requested
                         operation has been canceled. (This warning is displayed only once!)
-                        """.format(self.configuration.path, self.dbfile))
+                        """.format(self.configuration.path, self.dbFilePath))
                 , initial_indent="!!!   ", subsequent_indent="!!!   "))
             return
 
@@ -95,7 +95,7 @@ class Register(object):
         self.op = dd[args.op][0]
 
         if self.op != self.resetfromlog:
-            self.mm = DBModel(self.dbfile)
+            self.mm = DBModel(self.dbFilePath)
 
         self.processfiles(thorough=dd[args.op][1])
 
@@ -470,16 +470,16 @@ class Register(object):
             print("The logfile " + self.logfile + " doesn't exist!")
             return
         # backup the old one
-        if os.path.exists(self.dbfile):
-            bak = self.dbfile + "~"
+        if os.path.exists(self.dbFilePath):
+            bak = self.dbFilePath + "~"
             if os.path.exists(bak):
                 if input("A backup already exists. Remove it (only Yes is accepted)? ") != "Yes":
                     return
                 os.remove(bak)
-            os.rename(self.dbfile, bak)
+            os.rename(self.dbFilePath, bak)
         # read new one
         print("This might take a while depending on the log size. Please wait ...")
-        self.mm = DBModel(self.dbfile)
+        self.mm = DBModel(self.dbFilePath)
         with open(self.logfile, "r") as self.logf:
             for ll in self.logf:
                 if ll.startswith(Register.LOGADD):
