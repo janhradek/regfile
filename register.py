@@ -414,7 +414,7 @@ class Register(object):
         ff = None
         if (isinstance(self.files, list)):
             if len(self.files) > 1:
-                print("Please provide just one name or none ar all!")
+                print("Please provide just one name or none at all!")
                 return
             elif len(self.files) == 1:
                 ff = self.files[0]
@@ -436,7 +436,7 @@ class Register(object):
         ff = None
         if (isinstance(self.files, list)):
             if len(self.files) > 1:
-                print("Please provide just one name or none ar all!")
+                print("Please provide just one name or none at all!")
                 return
             elif len(self.files) == 1:
                 ff = self.files[0]
