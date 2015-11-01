@@ -419,6 +419,10 @@ class Register(object):
             elif len(self.files) == 1:
                 ff = self.files[0]
 
+        if (self.fileId is None):
+            print("Please provide file ID (-i option).")
+            return
+
         dbf = DBFile(fileId=self.fileId, fileName=ff, group=self.group, comment=self.comment)
         self.log(Register.LOGUPDATE + self._formatDBFileForLog(dbf))
         dbf = self.mm.update(dbf)
