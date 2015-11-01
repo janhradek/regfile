@@ -348,7 +348,15 @@ class Register(object):
                         break
                     self.printstatus(ii, ff, ms.fileName + " L" + str(ll))
 
-                    dbf = DBFile.fromMySum(ms, gr, com)
+                    dbf = DBFile(
+                            fileName    = ms.fileName,
+                            group       = gr,
+                            comment     = com,
+                            fileSize    = ms.fileSize,
+                            md1         = ms.md1,
+                            md5         = ms.md5,
+                            ed2k        = ms.ed2k,
+                    )
 
                     matchingDBFile = self._determineMatchingDBFile(dbf)
 

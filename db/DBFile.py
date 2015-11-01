@@ -26,7 +26,3 @@ class DBFile(DBBase):
             fileId = None
         self.fileName, self.group, self.comment, self.fileSize, self.md1, self.md5, self.ed2k, self.fileId = \
             fileName, group, comment, fileSize, md1, md5, ed2k, fileId
-
-    @staticmethod
-    def fromMySum(ms, group, comment):
-        return DBFile(ms.fileName, group, comment, ms.fileSize, ms.md1, ms.md5, ms.ed2k)
