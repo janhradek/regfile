@@ -504,7 +504,7 @@ class Register(object):
         if line:
             self.logf.write(line+"\n")
 
-    def printstatus(self, no, ff, msg):
+    def printstatus(self, no, ff, msg, totalItems = None):
         """
         print the provided information so it fits on one line of the terminal
 
@@ -513,8 +513,12 @@ class Register(object):
         |[no/total] filenamefilename~filenamefilename   message |
         |[no/total] filenamefi~mefilename   veryverylongmessage |
         """
+
+        if (totalItems is None):
+            totalItems = len(self.files)
+
         stat = str(len(self.files))
-        stat = "[{}/{}] ".format(str(no).rjust(len(stat)), len(self.files))
+        stat = "[{}/{}] ".format(str(no).rjust(len(stat)), totalItems)
         # filename has all the space that's left by message and current stat
         lff = self.cols - len(msg) - len(stat) - 5 # 1 (before) + 3 (after) + 1 (end)
         if lff < len(ff):  # not enough space - construct file~name
