@@ -447,7 +447,7 @@ class Register(object):
 
         dbf = DBFile(fileId=self.fileId, fileName=ff, group=self.group, comment=self.comment)
         ll = self.mm.queryinfo(dbf)
-        if ll == None:
+        if (ll is None):
             print("No record matches the query!")
         else:
             formatDBFileMethod = self._formatDBFile
@@ -538,7 +538,7 @@ class Register(object):
         pgs = ms.processedSize
         size = ms.fileSize
         tnow = time.time()
-        if pgs == None:
+        if (pgs is None):
             pgs = 0
         if size == 0:
             percent = 100
@@ -643,7 +643,7 @@ class Register(object):
             dirname = os.path.dirname(ff)
             if dirname in self.defaultcache:
                 grcom = self.defaultcache[dirname]
-                if grcom != None: # None means "use arg values"
+                if (grcom is not None): # None means "use arg values"
                     gr, com = grcom
             else:
                 # not in cache - read the defaults file
@@ -676,7 +676,7 @@ class Register(object):
             if not os.path.isabs(ff):
                 ff = os.path.join(os.getcwd(), ff)
 
-            if self.pathTemplates == None:
+            if (self.pathTemplates is None):
                 self.pathTemplates = PathTemplates.fromConfig(self.configuration[RegfileConfiguration.PATH_TEMPLATES])
 
             gr, com = self.pathTemplates.apply(ff, self.group, self.comment, gr, com, imp)

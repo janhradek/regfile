@@ -41,7 +41,7 @@ class DBModel(object):
         '''
         close database connection
         '''
-        if not self.SessionMaker == None:
+        if (self.SessionMaker is not None):
             self.SessionMaker.close_all()
         del(self.SessionMaker)
         self.SessionMaker = None
@@ -51,7 +51,7 @@ class DBModel(object):
         self.session = None
 
     def commit(self):
-        if self.session != None:
+        if (self.session is not None):
             self.session.commit()
 
     def queryinfo(self, dbf):
@@ -62,13 +62,13 @@ class DBModel(object):
         only filename, group and comment can be queried
         """
         q = self.session.query(DBFile).order_by(DBFile.fileId)
-        if dbf.fileId != None:
+        if (dbf.fileId is not None):
             q = q.filter(DBFile.fileId.ilike(dbf.fileId))
-        if dbf.fileName != None and dbf.fileName != "":
+        if (dbf.fileName):
             q = q.filter(DBFile.fileName.ilike(self.strtoqstr(dbf.fileName)))
-        if dbf.group != None and dbf.group != "":
+        if (dbf.group):
             q = q.filter(DBFile.group.ilike(self.strtoqstr(dbf.group)))
-        if dbf.comment != None and dbf.comment != "":
+        if (dbf.comment):
             q = q.filter(DBFile.comment.ilike(self.strtoqstr(dbf.comment)))
 
         res = list(q.all())
