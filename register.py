@@ -47,8 +47,8 @@ class Register(object):
 
         # arguments
         self.fileId = args.fileId
-        self.group = args.group #if args.group != None else "" # set doesnt like it
-        self.comment = args.comment #if args.comment != None else "" # set doesnt like it
+        self.group = args.group
+        self.comment = args.comment
         self.files = args.filenames
         self.queryasmysum = args.queryasmysum
         self.queryverbose = args.queryverbose
@@ -633,8 +633,8 @@ class Register(object):
         to be used with register and import only
         set imp to True if importing
         """
-        gr = self.group # if self.group != None else "" # bad idea - the values are compared later
-        com = self.comment # if self.comment != None else ""
+        gr = self.group
+        com = self.comment
         if gr and com:
             return gr, com
 
@@ -658,9 +658,9 @@ class Register(object):
                         continue
                     ll = dd.readlines()
                     dd.close()
-                    if len(ll) >= 1 and not gr:#( gr == "" or gr == None ):
+                    if len(ll) >= 1 and not gr:
                         gr = ll[0].strip()
-                    if len(ll) >= 2 and not com:#( com == "" or com == None):
+                    if len(ll) >= 2 and not com:
                         com = ll[1].strip()
                     break
 
