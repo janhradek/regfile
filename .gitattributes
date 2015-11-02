@@ -1,0 +1,2 @@
+# use python to use the python diff filter for *.py files
+*.py diff=python
