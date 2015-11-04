@@ -11,8 +11,9 @@ import time
 from MySum import MySum
 from PathTemplates import PathTemplates
 from RegfileConfiguration import RegfileConfiguration
+from db.DBConnection import DBConnection
 from db.DBFile import DBFile
-from db.DBModel import DBModel
+from db.DBFileRegister import DBFileRegister
 from progressbar import progressbar
 
 class Register(object):
@@ -58,7 +59,7 @@ class Register(object):
         self.determineconfirm(args)
 
         # defaults
-        self.mm = None # database model
+        self.dbConnection = None # database connection
         self.op = None # operation function
         self.logf = None # log file
         self.pathTemplates = None  # path templates
@@ -95,7 +96,7 @@ class Register(object):
         self.op = dd[args.op][0]
 
         if self.op != self.resetfromlog:
-            self.mm = DBModel(self.dbFilePath)
+            self.dbConnection = DBConnection(self.dbFilePath)
 
         self.processfiles(thorough=dd[args.op][1])
 
@@ -114,8 +115,8 @@ class Register(object):
         finally:
             if self.logf:
                 self.logf.close()
-            if self.mm:
-                self.mm.close()
+            if self.dbConnection:
+                self.dbConnection.close()
 
     def determineconfirm(self, args):
         """arguments take precedence over configuration"""
@@ -153,117 +154,119 @@ class Register(object):
         ii = 0
         failfiles = []
         dbFilesToStore = []
-        for ff in self.files:
-            ii = ii + 1
-            fileMightBeRegistered = False
-            cdir = os.path.dirname(ff) # directory
-            sff = os.path.basename(ff) # short filename
-            try:
-                if cdir != pdir:
-                    print("Directory [{}]".format(cdir))
-                    pdir = cdir
+        with self.dbConnection.getSessionContext() as session:
+            for ff in self.files:
+                ii = ii + 1
+                fileMightBeRegistered = False
+                cdir = os.path.dirname(ff) # directory
+                sff = os.path.basename(ff) # short filename
+                try:
+                    if cdir != pdir:
+                        print("Directory [{}]".format(cdir))
+                        pdir = cdir
 
-                dbf = DBFile(fileName = sff)
+                    dbf = DBFile(fileName = sff)
 
-                if register: # group and comment
-                    gr, com = self.getgroupcomment(ff)
-                    if gr != pgr or com != pcom:
-                        print("Using group:'{}' comment:'{}'".format(gr, com))
-                        pgr, pcom = gr, com
-                    dbf.group, dbf.comment = gr, com
-                self.printstatus(ii, sff, "Quick")
+                    if register: # group and comment
+                        gr, com = self.getgroupcomment(ff)
+                        if gr != pgr or com != pcom:
+                            print("Using group:'{}' comment:'{}'".format(gr, com))
+                            pgr, pcom = gr, com
+                        dbf.group, dbf.comment = gr, com
+                    self.printstatus(ii, sff, "Quick")
 
-                # stage 1 - silent
-                ms = MySum(ff)
-                ms.upgrade(1)
-                dbf.fileSize = ms.fileSize
-                dbf.md1 = ms.md1
+                    # stage 1 - silent
+                    ms = MySum(ff)
+                    ms.upgrade(1)
+                    dbf.fileSize = ms.fileSize
+                    dbf.md1 = ms.md1
 
-                fileMightBeRegistered = self._determineFileMightBeRegistered(dbf)
+                    fileMightBeRegistered = self._determineFileMightBeRegistered(session, dbf)
 
-                if ((not register) and (not fileMightBeRegistered)):
-                    self.printstatus(ii, sff, "FAIL")
-                    failfiles.append(ff)
-                    print()
-                    continue
-
-                tt = threading.Thread(target=ms.upgrade,args=[2])
-                tt.start()
-                while tt.is_alive():
-                    try:
-                        self.printstatus(ii, sff, self.msgpgs(ms,psize,tstart,fileMightBeRegistered))
-                        time.sleep(0.25)
-                    except KeyboardInterrupt:
-                        ms.requestStop()
-                        tt.join()
-                        raise
-
-                tt.join()
-
-                psize = psize + ms.fileSize
-
-                dbf.md5     = ms.md5
-                dbf.ed2k    = ms.ed2k
-
-                matchingDBFile = self._determineMatchingDBFile(dbf)
-
-                fullMatch = (
-                        (matchingDBFile is not None) and
-                        (dbf.fileName == matchingDBFile.fileName) and
-                        (dbf.group == matchingDBFile.group) and
-                        (dbf.comment == matchingDBFile.comment)
-                )
-
-                if register:
-                    if (matchingDBFile is None):
-                        self.mm.insert(dbf, commit=False)
-                        self.printstatus(ii, sff, "New entry " + str(dbf.fileId))
-                        dbFilesToStore.append(dbf)
-                    else:
-                        if (fullMatch):
-                            self.printstatus(ii, sff, "Already registered (full match) as " + str(matchingDBFile.fileId))
-                        else:
-                            self.printstatus(ii, sff, "Already registered (data match) as " + str(matchingDBFile.fileId))
-                        failfiles.append(ff)
-                else:
-                    if (matchingDBFile is None):
+                    if ((not register) and (not fileMightBeRegistered)):
                         self.printstatus(ii, sff, "FAIL")
                         failfiles.append(ff)
+                        print()
+                        continue
+
+                    tt = threading.Thread(target=ms.upgrade,args=[2])
+                    tt.start()
+                    while tt.is_alive():
+                        try:
+                            self.printstatus(ii, sff, self.msgpgs(ms,psize,tstart,fileMightBeRegistered))
+                            time.sleep(0.25)
+                        except KeyboardInterrupt:
+                            ms.requestStop()
+                            tt.join()
+                            raise
+
+                    tt.join()
+
+                    psize = psize + ms.fileSize
+
+                    dbf.md5     = ms.md5
+                    dbf.ed2k    = ms.ed2k
+
+                    matchingDBFile = self._determineMatchingDBFile(session, dbf)
+
+                    fullMatch = (
+                            (matchingDBFile is not None) and
+                            (dbf.fileName == matchingDBFile.fileName) and
+                            (dbf.group == matchingDBFile.group) and
+                            (dbf.comment == matchingDBFile.comment)
+                    )
+
+                    if register:
+                        if (matchingDBFile is None):
+                            DBFileRegister.insert(session, dbf, commit=False)
+                            self.printstatus(ii, sff, "New entry " + str(dbf.fileId))
+                            dbFilesToStore.append(dbf)
+                        else:
+                            if (fullMatch):
+                                self.printstatus(ii, sff, "Already registered (full match) as " + str(matchingDBFile.fileId))
+                            else:
+                                self.printstatus(ii, sff, "Already registered (data match) as " + str(matchingDBFile.fileId))
+                            failfiles.append(ff)
                     else:
-                        stat = "OK"
-                        if (not fullMatch):
-                            stat = "(as " + matchingDBFile.fileName + ") OK"
-                        stat = "id:" + str(matchingDBFile.fileId) + " " + stat
-                        self.printstatus(ii, sff, stat)
-                print()
-            except KeyboardInterrupt:
-                self.printstatus(ii, sff, "Interrupted")
-                failfiles.append(ff + "    (Interrupted)")
-                print()
-                break
+                        if (matchingDBFile is None):
+                            self.printstatus(ii, sff, "FAIL")
+                            failfiles.append(ff)
+                        else:
+                            stat = "OK"
+                            if (not fullMatch):
+                                stat = "(as " + matchingDBFile.fileName + ") OK"
+                            stat = "id:" + str(matchingDBFile.fileId) + " " + stat
+                            self.printstatus(ii, sff, stat)
+                    print()
+                except KeyboardInterrupt:
+                    self.printstatus(ii, sff, "Interrupted")
+                    failfiles.append(ff + "    (Interrupted)")
+                    print()
+                    break
 
-        print(self.RULER)
-        if register:
-            print("About to register {} files out of {}".format(ii-len(failfiles),ii))
-        else:
-            print("Passed {} files out of {}.{}".format(ii-len(failfiles), ii, "ALL OK" if not len(failfiles) else "" ))
-        if len(failfiles) > 0:
-            print("A list of files that failed:")
-            for ff in failfiles:
-                print("    " + ff)
-        if register:
-            if len(failfiles) == ii:
-                print("No files were registered!")
-            elif self.docommit(failfiles):
-                self.mm.commit()
-                for storedDBFile in dbFilesToStore:
-                    self.log(Register.LOGADD + self._formatDBFileForLog(storedDBFile))
-                print("Done.")
+            print(self.RULER)
+            if register:
+                print("About to register {} files out of {}".format(ii-len(failfiles),ii))
             else:
-                print("Aborted!")
+                print("Passed {} files out of {}.{}".format(ii-len(failfiles), ii, "ALL OK" if not len(failfiles) else "" ))
+            if len(failfiles) > 0:
+                print("A list of files that failed:")
+                for ff in failfiles:
+                    print("    " + ff)
+            if register:
+                if len(failfiles) == ii:
+                    print("No files were registered!")
+                elif self.docommit(failfiles):
+                    session.commit()
+                    for storedDBFile in dbFilesToStore:
+                        self.log(Register.LOGADD + self._formatDBFileForLog(storedDBFile))
+                    print("Done.")
+                else:
+                    print("Aborted!")
 
 
-    def _determineFileMightBeRegistered(self, dbf):
+    @staticmethod
+    def _determineFileMightBeRegistered(session, dbf):
         # DOC {{{
         """Returns True if there is a registered file of the size and the MD5
         sum of the first megabyte specified in the provided DBFile(), False
@@ -276,13 +279,14 @@ class Register(object):
         # }}}
 
         # CODE {{{
-        dbfs = self.mm.querydata(dbf, quick=True)
+        dbfs = DBFileRegister.querydata(session, dbf, quick=True)
 
         return (dbfs is not None)
          # }}}
 
 
-    def _determineMatchingDBFile(self, dbf):
+    @staticmethod
+    def _determineMatchingDBFile(session, dbf):
         # DOC {{{
         """Returns the DBFile() that matches the size, the MD5 sum of the first
         megabyte, the MD5 sum of the entire file and the ED2K sum of the
@@ -295,7 +299,7 @@ class Register(object):
         # }}}
 
         # CODE {{{
-        dbfs = self.mm.querydata(dbf)
+        dbfs = DBFileRegister.querydata(session, dbf)
 
         if ((dbfs is None) or (len(dbfs) == 0)):
             return None
@@ -317,93 +321,94 @@ class Register(object):
         failfiles = [] # a list of files that failed to import
         allDBFilesToStore = []
 
-        for ff in self.files:
-            ii = ii + 1
-            cdir = os.path.dirname(ff) # directory
-            if cdir != pdir:
-                print("Directory [{}]".format(cdir))
-                pdir = cdir
+        with self.dbConnection.getSessionContext() as session:
+            for ff in self.files:
+                ii = ii + 1
+                cdir = os.path.dirname(ff) # directory
+                if cdir != pdir:
+                    print("Directory [{}]".format(cdir))
+                    pdir = cdir
 
-            gr, com = self.getgroupcomment(ff, imp=True)
-            if gr != pgr or com != pcom:
-                print("Using group:{} comment:{}".format(gr, com))
-                pgr, pcom = gr, com
+                gr, com = self.getgroupcomment(ff, imp=True)
+                if gr != pgr or com != pcom:
+                    print("Using group:{} comment:{}".format(gr, com))
+                    pgr, pcom = gr, com
 
-            self.printstatus(ii, ff, "")
+                self.printstatus(ii, ff, "")
 
-            with open(ff, "r") as fsum:
-                ll = 0
-                fail = False
+                with open(ff, "r") as fsum:
+                    ll = 0
+                    fail = False
 
-                dbFilesToStoreFromImportFile = []
-                for line in fsum:
-                    ll = ll + 1
-                    self.printstatus(ii, ff, "L" + str(ll))
-                    try:
-                        ms = MySum.fromString(line)
-                    except ValueError:
-                        self.printstatus(ii, ff, "not a MYSUM!")
-                        print()
-                        fail = True
-                        break
-                    self.printstatus(ii, ff, ms.fileName + " L" + str(ll))
+                    dbFilesToStoreFromImportFile = []
+                    for line in fsum:
+                        ll = ll + 1
+                        self.printstatus(ii, ff, "L" + str(ll))
+                        try:
+                            ms = MySum.fromString(line)
+                        except ValueError:
+                            self.printstatus(ii, ff, "not a MYSUM!")
+                            print()
+                            fail = True
+                            break
+                        self.printstatus(ii, ff, ms.fileName + " L" + str(ll))
 
-                    dbf = DBFile(
-                            fileName    = ms.fileName,
-                            group       = gr,
-                            comment     = com,
-                            fileSize    = ms.fileSize,
-                            md1         = ms.md1,
-                            md5         = ms.md5,
-                            ed2k        = ms.ed2k,
-                    )
+                        dbf = DBFile(
+                                fileName    = ms.fileName,
+                                group       = gr,
+                                comment     = com,
+                                fileSize    = ms.fileSize,
+                                md1         = ms.md1,
+                                md5         = ms.md5,
+                                ed2k        = ms.ed2k,
+                        )
 
-                    matchingDBFile = self._determineMatchingDBFile(dbf)
+                        matchingDBFile = self._determineMatchingDBFile(session, dbf)
 
-                    fullMatch = ((matchingDBFile is not None) and
-                                 (dbf.fileName == matchingDBFile.fileName) and
-                                 (dbf.group == matchingDBFile.group) and
-                                 (dbf.comment == matchingDBFile.comment))
+                        fullMatch = ((matchingDBFile is not None) and
+                                     (dbf.fileName == matchingDBFile.fileName) and
+                                     (dbf.group == matchingDBFile.group) and
+                                     (dbf.comment == matchingDBFile.comment))
 
-                    if (matchingDBFile):
-                        warn = warn + 1
+                        if (matchingDBFile):
+                            warn = warn + 1
 
-                        if (fullMatch):
-                            self.printstatus(ii, ff, "Already registered (full match) as {} L{}".format(matchingDBFile.fileId, ll))
+                            if (fullMatch):
+                                self.printstatus(ii, ff, "Already registered (full match) as {} L{}".format(matchingDBFile.fileId, ll))
+                            else:
+                                self.printstatus(ii, ff, "Already registered (data match) as {} L{}".format(matchingDBFile.fileId, ll))
+                            print()
+                            continue
+                        jj = jj + 1
+                        dbFilesToStoreFromImportFile.append(dbf)
+                    if fail:
+                        if ll == 1:
+                            self.printstatus(ii, ff, "FAIL")
+                            failfiles.append(ff)
+                            print()
                         else:
-                            self.printstatus(ii, ff, "Already registered (data match) as {} L{}".format(matchingDBFile.fileId, ll))
-                        print()
-                        continue
-                    jj = jj + 1
-                    dbFilesToStoreFromImportFile.append(dbf)
-                if fail:
-                    if ll == 1:
-                        self.printstatus(ii, ff, "FAIL")
-                        failfiles.append(ff)
-                        print()
+                            sll = "after " + str(ll) + " lines"
+                            self.printstatus(ii, ff, "FAIL " + sll)
+                            failfiles.append(ff + "       (" + sll + ")")
+                            print()
                     else:
-                        sll = "after " + str(ll) + " lines"
-                        self.printstatus(ii, ff, "FAIL " + sll)
-                        failfiles.append(ff + "       (" + sll + ")")
-                        print()
-                else:
-                    for dbf in dbFilesToStoreFromImportFile:
-                        self.mm.insert(dbf, commit=False)
-                    allDBFilesToStore.extend(dbFilesToStoreFromImportFile)
-                print()
-        print(self.RULER)
-        print("About to import {} entries ({} warnings) from {} files out of {}".format(jj, warn, len(self.files) - len(failfiles), len(self.files)))
-        if len(failfiles) > 0:
-            print("A list of files that failed:")
-            for ff in failfiles:
-                print("    " + ff)
-        if self.docommit(failfiles):
-            self.mm.commit()
-            for storedDBFile in allDBFilesToStore:
-                self.log(Register.LOGADD + self._formatDBFileForLog(storedDBFile))
-            print("Done.")
-        else:
-            print("Aborted!")
+                        for dbf in dbFilesToStoreFromImportFile:
+                            DBFileRegister.insert(session, dbf, commit=False)
+                        allDBFilesToStore.extend(dbFilesToStoreFromImportFile)
+                    print()
+            print(self.RULER)
+            print("About to import {} entries ({} warnings) from {} files out of {}".format(jj, warn, len(self.files) - len(failfiles), len(self.files)))
+            if len(failfiles) > 0:
+                print("A list of files that failed:")
+                for ff in failfiles:
+                    print("    " + ff)
+            if self.docommit(failfiles):
+                session.commit()
+                for storedDBFile in allDBFilesToStore:
+                    self.log(Register.LOGADD + self._formatDBFileForLog(storedDBFile))
+                print("Done.")
+            else:
+                print("Aborted!")
 
     def setdata(self):
         """
@@ -423,9 +428,12 @@ class Register(object):
             print("Please provide file ID (-i option).")
             return
 
+        self.fileId = int(self.fileId)
+
         dbf = DBFile(fileId=self.fileId, fileName=ff, group=self.group, comment=self.comment)
         self.log(Register.LOGUPDATE + self._formatDBFileForLog(dbf))
-        dbf = self.mm.update(dbf)
+        with self.dbConnection.getSessionContext() as session:
+            dbf = DBFileRegister.update(session, dbf)
         if not dbf:
             print("Error updating the entry!")
         else:
@@ -446,7 +454,10 @@ class Register(object):
                 ff = self.files[0]
 
         dbf = DBFile(fileId=self.fileId, fileName=ff, group=self.group, comment=self.comment)
-        ll = self.mm.queryinfo(dbf)
+
+        with self.dbConnection.getSessionContext() as session:
+            ll = DBFileRegister.queryinfo(session, dbf)
+
         if (ll is None):
             print("No record matches the query!")
         else:
@@ -479,17 +490,19 @@ class Register(object):
             os.rename(self.dbFilePath, bak)
         # read new one
         print("This might take a while depending on the log size. Please wait ...")
-        self.mm = DBModel(self.dbFilePath)
-        with open(self.logfile, "r") as self.logf:
-            for ll in self.logf:
-                if ll.startswith(Register.LOGADD):
-                    dbf = self._dbFileFromLog(ll[len(Register.LOGADD):])
-                    self.mm.insert(dbf, commit=False)
-                elif ll.startswith(Register.LOGUPDATED):
-                    dbf = self._dbFileFromLog(ll[len(Register.LOGUPDATED):])
-                    self.mm.commit()
-                    self.mm.update(dbf, setall=True)
-        self.mm.commit()
+        self.dbConnection = DBConnection(self.dbFilePath)
+        with self.dbConnection.getSessionContext() as session:
+            with open(self.logfile, "r") as self.logf:
+                for ll in self.logf:
+                    if ll.startswith(Register.LOGADD):
+                        dbf = self._dbFileFromLog(ll[len(Register.LOGADD):])
+                        DBFileRegister.insert(session, dbf, commit=False)
+                    elif ll.startswith(Register.LOGUPDATED):
+                        dbf = self._dbFileFromLog(ll[len(Register.LOGUPDATED):])
+                        session.commit()
+                        DBFileRegister.update(session,dbf, setall=True)
+                    # TODO display progress (line, items, date)
+            session.commit()
         print("Done")
 
     def log(self, line):
