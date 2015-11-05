@@ -13,6 +13,7 @@ from PathTemplates import PathTemplates
 from RegfileConfiguration import RegfileConfiguration
 from db.DBConnection import DBConnection
 from db.DBFile import DBFile
+from db.DBFileQueryArguments import DBFileQueryArguments
 from db.DBFileRegister import DBFileRegister
 from progressbar import progressbar
 
@@ -181,7 +182,11 @@ class Register(object):
                     dbf.fileSize = ms.fileSize
                     dbf.md1 = ms.md1
 
-                    fileMightBeRegistered = self._determineFileMightBeRegistered(session, dbf)
+                    fileMightBeRegistered = self._determineFileMightBeRegistered(
+                            session     = session,
+                            fileSize    = dbf.fileSize,
+                            md1         = dbf.md1,
+                    )
 
                     if ((not register) and (not fileMightBeRegistered)):
                         self.printstatus(ii, sff, "FAILED")
@@ -207,7 +212,13 @@ class Register(object):
                     dbf.md5     = ms.md5
                     dbf.ed2k    = ms.ed2k
 
-                    matchingDBFile = self._determineMatchingDBFile(session, dbf)
+                    matchingDBFile = self._determineMatchingDBFile(
+                            session     = session,
+                            fileSize    = dbf.fileSize,
+                            md1         = dbf.md1,
+                            md5         = dbf.md5,
+                            ed2k        = dbf.ed2k,
+                    )
 
                     fullMatch = (
                             (matchingDBFile is not None) and
@@ -266,7 +277,7 @@ class Register(object):
 
 
     @staticmethod
-    def _determineFileMightBeRegistered(session, dbf):
+    def _determineFileMightBeRegistered(session, fileSize, md1):
         # DOC {{{
         """Returns True if there is a registered file of the size and the MD5
         sum of the first megabyte specified in the provided DBFile(), False
@@ -274,19 +285,27 @@ class Register(object):
 
         Parameters
 
-            dbf -- an instance of DBFile()
+            session -- an instance of the SQLAlchemy's Session()
+
+            fileSize -- the size of the file to look for in bytes
+
+            md1 -- the MD5 sum of the first megabyte of the file
         """
         # }}}
 
         # CODE {{{
-        dbfs = DBFileRegister.querydata(session, dbf, quick=True)
+        dbfs = DBFileRegister.query(
+                session     = session,
+                fileSize    = fileSize,
+                md1         = md1,
+        )
 
         return (dbfs is not None)
          # }}}
 
 
     @staticmethod
-    def _determineMatchingDBFile(session, dbf):
+    def _determineMatchingDBFile(session, fileSize, md1, md5, ed2k):
         # DOC {{{
         """Returns the DBFile() that matches the size, the MD5 sum of the first
         megabyte, the MD5 sum of the entire file and the ED2K sum of the
@@ -294,12 +313,26 @@ class Register(object):
 
         Parameters
 
-            dbf -- an instance of DBFile()
+            session -- an instance of the SQLAlchemy's Session()
+
+            fileSize -- the size of the file to look for in bytes
+
+            md1 -- the MD5 sum of the first megabyte of the file
+
+            md1 -- the MD5 sum of the entire file
+
+            ed2k -- the ED2K sum of the entire file
         """
         # }}}
 
         # CODE {{{
-        dbfs = DBFileRegister.querydata(session, dbf)
+        dbfs = DBFileRegister.query(
+                session     = session,
+                fileSize    = fileSize,
+                md1         = md1,
+                md5         = md5,
+                ed2k        = ed2k,
+        )
 
         if ((dbfs is None) or (len(dbfs) == 0)):
             return None
@@ -363,7 +396,13 @@ class Register(object):
                                 ed2k        = ms.ed2k,
                         )
 
-                        matchingDBFile = self._determineMatchingDBFile(session, dbf)
+                        matchingDBFile = self._determineMatchingDBFile(
+                                session     = session,
+                                fileSize    = dbf.fileSize,
+                                md1         = dbf.md1,
+                                md5         = dbf.md5,
+                                ed2k        = dbf.ed2k,
+                        )
 
                         fullMatch = ((matchingDBFile is not None) and
                                      (dbf.fileName == matchingDBFile.fileName) and
@@ -453,10 +492,31 @@ class Register(object):
             elif len(self.files) == 1:
                 ff = self.files[0]
 
-        dbf = DBFile(fileId=self.fileId, fileName=ff, group=self.group, comment=self.comment)
+        # create a new query arguments
+        dbFileQueryArguments = DBFileQueryArguments()
+
+        # add a query argument matching the file's ID if it is specified {{{
+        if (self.fileId is not None):
+            dbFileQueryArguments.fileId = self.fileId
+        # }}}
+
+        # add a query argument matching the file's name if it is specified {{{
+        if (ff is not None):
+            dbFileQueryArguments.fileName = ff
+        # }}}
+
+        # add a query argument matching the file's group if it is specified {{{
+        if (self.group is not None):
+            dbFileQueryArguments.group = self.group
+        # }}}
+
+        # add a query argument matching the file's comment if it is specified {{{
+        if (self.comment is not None):
+            dbFileQueryArguments.comment = self.comment
+        # }}}
 
         with self.dbConnection.getSessionContext() as session:
-            ll = DBFileRegister.queryinfo(session, dbf)
+            ll = DBFileRegister.query(session, dbFileQueryArguments)
 
         if (ll is None):
             print("No record matches the query!")

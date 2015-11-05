@@ -9,6 +9,7 @@
 import re
 
 from .DBFile import DBFile
+from .DBFileQueryArguments import DBFileQueryArguments
 # }}}
 
 
@@ -27,57 +28,193 @@ class DBFileRegister(object):
     _LIKELIZE_VALUE_RE           = re.compile(r'(%|^|$|\s)+')
     # }}}
 
-
     # METHODS {{{
     @classmethod
-    def queryinfo(cls, session, dbf):
+    def query(cls, session, dbFileQueryArguments = None, **kwargs):
         # DOC {{{
-        """Returns all records mathing the specified dbf info properties
-        (fileId, fileName, group and comment). Properties set to None will be
-        ignored.
+        """Returns a list of all DBFile()s matching the specified
+        DBFileQueryArguments() or None if no such DBFile()s were found. Any
+        surplus keyword arguments are added to the DBFileQueryArguments() or
+        used to build it if it was not specified.
+
+        Parameters
+
+            session -- an instance of SQLAlchemy's Session()
+
+            dbFileQueryArguments -- (optional) an instance of
+                DBFileQueryArguments()
+
+            **kwargs -- any surplus keyword arguments are added to the
+                specified DBFileQueryArguments() or used to build a new one.
         """
         # }}}
 
         # CODE {{{
-        query = session.query(DBFile).order_by(DBFile.fileId)
+        # build the SQLAlchemy's Query() from the specified DBFileQueryArguments() in the Session()
+        query = cls._buildQuery(session, dbFileQueryArguments, **kwargs)
 
-        if (dbf.fileId is not None):
-            query = query.filter(DBFile.fileId == dbf.fileId)
-        if (dbf.fileName):
-            query = query.filter(DBFile.fileName.ilike(cls._likelizeString(dbf.fileName)))
-        if (dbf.group):
-            query = query.filter(DBFile.group.ilike(cls._likelizeString(dbf.group)))
-        if (dbf.comment):
-            query = query.filter(DBFile.comment.ilike(cls._likelizeString(dbf.comment)))
-
+        # retrieve all DBFile()s matching the query from the database as a list
         dbFiles = query.all()
-        if (len(dbFiles) == 0):
+
+        # return the resulting list of DBFile()s if there are any {{{
+        if (dbFiles):
+            return dbFiles
+        # }}}
+        # otherwise return None {{{
+        else:
             return None
-        return dbFiles
+        # }}}
+        # }}}
+
+
+    @classmethod
+    def queryFirst(cls, session, dbFileQueryArguments = None, **kwargs):
+        # DOC {{{
+        """Returns the first DBFile() matching the specified
+        DBFileQueryArguments() or None if no such DBFile() was found. Any
+        surplus keyword arguments are added to the DBFileQueryArguments() or
+        used to build it if it was not specified.
+
+        Parameters
+
+            session -- an instance of SQLAlchemy's Session()
+
+            dbFileQueryArguments -- (optional) an instance of
+                DBFileQueryArguments()
+
+            **kwargs -- any surplus keyword arguments are added to the
+                specified DBFileQueryArguments() or used to build a new one.
+        """
+        # }}}
+
+        # CODE {{{
+        # build the SQLAlchemy's Query() from the specified DBFileQueryArguments() in the Session()
+        query = cls._buildQuery(session, dbFileQueryArguments, **kwargs)
+
+        # retrieve and return the first DBFile() matching the query from the
+        # database as a list or None if no such DBFile() was found
+        return query.first()
+        # }}}
+
+
+    @classmethod
+    def queryExists(cls, session, dbFileQueryArguments = None, **kwargs):
+        # DOC {{{
+        """Returns True if there is at least one DBFile() matching the specified
+        DBFileQueryArguments(), False otherwise. Any surplus keyword arguments
+        are added to the DBFileQueryArguments() or used to build it if it was
+        not specified.
+
+        Parameters
+
+            session -- an instance of SQLAlchemy's Session()
+
+            dbFileQueryArguments -- (optional) an instance of
+                DBFileQueryArguments()
+
+            **kwargs -- any surplus keyword arguments are added to the
+                specified DBFileQueryArguments() or used to build a new one.
+        """
+        # }}}
+
+        # CODE {{{
+        # return True if there is at least one matching DBFile(), False otherwise
+        return (cls.queryFirst(session, dbFileQueryArguments, **kwargs) is not None)
         # }}}
 
 
     @staticmethod
-    def querydata(session, dbf, quick=False):
+    def _buildQuery(session, dbFileQueryArguments = None, **kwargs):
         # DOC {{{
-        """Returns all records mathing the specified dbf data properties
-        (fileSize, md1, md5, ed2k). If quick is True only fileSize and md1 is
-        queried. Properties set to None will be ignored.
+        """Builds a query from the specified DBFileQueryArguments() in the
+        provided session. Any surplus keyword arguments are added to the
+        DBFileQueryArguments() or used to build it if it was not specified.
+
+        Parameters
+
+            session -- an instance of SQLAlchemy's Session()
+
+            dbFileQueryArguments -- (optional) an instance of
+                DBFileQueryArguments()
+
+            **kwargs -- any surplus keyword arguments are added to the
+                specified DBFileQueryArguments() or used to build a new one.
         """
         # }}}
 
         # CODE {{{
+        # create a new query ordered by DBFile().fileId in the specified session
         query = session.query(DBFile).order_by(DBFile.fileId)
-        query = query.filter(DBFile.fileSize == dbf.fileSize)
-        query = query.filter(DBFile.md1 == dbf.md1)
-        if not quick:
-            query = query.filter(DBFile.md5 == dbf.md5)
-            query = query.filter(DBFile.ed2k == dbf.ed2k)
 
-        dbFiles = query.all()
-        if (len(dbFiles) == 0):
-            return None
-        return dbFiles
+        # create a new DBFileQueryArguments() using the surplus arguments or
+        # return the query as it is now if no DBFileQueryArguments() were specified {{{
+        if (dbFileQueryArguments is None):
+            # build a new DBFileQueryArguments() if there are any surplus arguments {{{
+            if (kwargs):
+                dbFileQueryArguments = DBFileQueryArguments(**kwargs)
+            # }}}
+            # otherwise return the query as it is {{{
+            else:
+                return query
+            # }}}
+        # }}}
+        # otherwise add any surplus arguments to the specified DBFileQueryArguments() if there are any {{{
+        elif (kwargs):
+            # add the surplus arguments to the specified DBFileQueryArguments() {{{
+            for attributeName, attributeValue in kwargs.items():
+                # check that the attribute exists in dbFileQueryArguments (raises AttributeError)
+                getattr(dbFileQueryArguments, attributeName)
+
+                # set the value to the attribute
+                setattr(dbFileQueryArguments, attributeName, attributeValue)
+            # }}}
+        # }}}
+
+        # get the method to check whether the value is defined for convenience
+        isDefined = DBFileQueryArguments.isDefined
+
+        # add an equality filter over fileId if the corresponding query argument is defined {{{
+        if (isDefined(dbFileQueryArguments.fileId)):
+            query = query.filter(DBFile.fileId == dbFileQueryArguments.fileId)
+        # }}}
+
+        # add a 'like' filter over fileName if the corresponding query argument is defined {{{
+        if (isDefined(dbFileQueryArguments.fileName)):
+            query = query.filter(DBFile.fileName.ilike(DBFileRegister._likelizeString(dbFileQueryArguments.fileName)))
+        # }}}
+
+        # add a 'like' filter over group if the corresponding query argument is defined {{{
+        if (isDefined(dbFileQueryArguments.group)):
+            query = query.filter(DBFile.group.ilike(DBFileRegister._likelizeString(dbFileQueryArguments.group)))
+        # }}}
+
+        # add a 'like' filter over comment if the corresponding query argument is defined {{{
+        if (isDefined(dbFileQueryArguments.comment)):
+            query = query.filter(DBFile.comment.ilike(DBFileRegister._likelizeString(dbFileQueryArguments.comment)))
+        # }}}
+
+        # add an equality filter over fileSize if the corresponding query argument is defined {{{
+        if (isDefined(dbFileQueryArguments.fileSize)):
+            query = query.filter(DBFile.fileSize == dbFileQueryArguments.fileSize)
+        # }}}
+
+        # add an equality filter over MD5 sum of the first megabyte (md1) if the corresponding query argument is defined {{{
+        if (isDefined(dbFileQueryArguments.md1)):
+            query = query.filter(DBFile.md1 == dbFileQueryArguments.md1)
+        # }}}
+
+        # add an equality filter over MD5 sum if the corresponding query argument is defined {{{
+        if (isDefined(dbFileQueryArguments.md5)):
+            query = query.filter(DBFile.md5 == dbFileQueryArguments.md5)
+        # }}}
+
+        # add an equality filter over ED2K sum if the corresponding query argument is defined {{{
+        if (isDefined(dbFileQueryArguments.ed2k)):
+            query = query.filter(DBFile.ed2k == dbFileQueryArguments.ed2k)
+        # }}}
+
+        # return the prepared query
+        return query
         # }}}
 
 
@@ -122,8 +259,8 @@ class DBFileRegister(object):
         # }}}
 
 
-    @staticmethod
-    def update(session, dbf, setall=False):
+    @classmethod
+    def update(cls, session, dbf, setall=False):
         # DOC {{{
         """Updates a DBFile() persisted in the database specified by the given
         DBFile()'s fileId with the properties from the specified DBFile().
@@ -134,12 +271,12 @@ class DBFileRegister(object):
         # }}}
 
         # CODE {{{
-        query = session.query(DBFile).filter(DBFile.fileId == dbf.fileId)
+        persistedDBFile = cls.queryFirst(
+                session = session,
+                fileId  = dbf.fileId,
+        )
 
-        persistedDBFile = None
-        try:
-            persistedDBFile = query.one()
-        except:
+        if (persistedDBFile is None):
             return None
 
         changed = False
