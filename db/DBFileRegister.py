@@ -6,6 +6,8 @@
 
 
 # import of required modules {{{
+import re
+
 from .DBFile import DBFile
 # }}}
 
@@ -16,6 +18,13 @@ class DBFileRegister(object):
     """Provides methods that query, store and update DBFile()s in the
     database.
     """
+    # }}}
+
+
+    # STATIC VARIABLES {{{
+    # a compiled regular expression that matches the begining, the end, all spaces and
+    # percent signs of a string to replace these parts of that string with a single percent sign
+    _LIKELIZE_VALUE_RE           = re.compile(r'(%|^|$|\s)+')
     # }}}
 
 
@@ -73,19 +82,22 @@ class DBFileRegister(object):
 
 
     @staticmethod
-    def _likelizeString(ss):
+    def _likelizeString(value):
         # DOC {{{
-        """Replaces spaces and with percent sign (%) and also puts the percent
-        sign at the begining and at the end of the string, so it would match
-        any string containing the words in the original string in SQL".
-        E.g. "hello world" -> "%hello%world%"
+        """Replaces spaces in the specified string with a percent sign (%) and
+        also puts the percent sign at the begining and at the end of the
+        string, so the resulting string would match any string containing the
+        words in the original string in SQL. E.g. "hello world" ->
+        "%hello%world%"
+
+        Parameters
+
+            value -- a string to likelize
         """
         # }}}
 
         # CODE {{{
-        ss = "%" + ss + "%"
-        ss.replace(' ', '%')
-        return ss
+        return DBFileRegister._LIKELIZE_VALUE_RE.sub("%", value)
         # }}}
 
 
