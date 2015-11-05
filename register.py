@@ -184,7 +184,7 @@ class Register(object):
                     fileMightBeRegistered = self._determineFileMightBeRegistered(session, dbf)
 
                     if ((not register) and (not fileMightBeRegistered)):
-                        self.printstatus(ii, sff, "FAIL")
+                        self.printstatus(ii, sff, "FAILED")
                         failfiles.append(ff)
                         print()
                         continue
@@ -229,7 +229,7 @@ class Register(object):
                             failfiles.append(ff)
                     else:
                         if (matchingDBFile is None):
-                            self.printstatus(ii, sff, "FAIL")
+                            self.printstatus(ii, sff, "FAILED")
                             failfiles.append(ff)
                         else:
                             stat = "OK"
@@ -383,12 +383,12 @@ class Register(object):
                         dbFilesToStoreFromImportFile.append(dbf)
                     if fail:
                         if ll == 1:
-                            self.printstatus(ii, ff, "FAIL")
+                            self.printstatus(ii, ff, "FAILED")
                             failfiles.append(ff)
                             print()
                         else:
                             sll = "after " + str(ll) + " lines"
-                            self.printstatus(ii, ff, "FAIL " + sll)
+                            self.printstatus(ii, ff, "FAILED " + sll)
                             failfiles.append(ff + "       (" + sll + ")")
                             print()
                     else:
