@@ -233,7 +233,7 @@ class Register(object):
                             failfiles.append(ff)
                         else:
                             stat = "OK"
-                            if (not fullMatch):
+                            if (dbf.fileName != matchingDBFile.fileName):
                                 stat = "(as " + matchingDBFile.fileName + ") OK"
                             stat = "id:" + str(matchingDBFile.fileId) + " " + stat
                             self.printstatus(ii, sff, stat)
